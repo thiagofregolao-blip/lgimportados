@@ -237,9 +237,20 @@ assistantRoutes.post('/stream', async (req: Request, res: Response) => {
             content: message,
         });
 
-        // 3. Executar o assistente
+        // 3. Executar o assistente com instruções adicionais
+        const additionalInstructions = `
+REGRAS CRÍTICAS PARA ESTA RESPOSTA:
+1. NUNCA invente produtos. Use APENAS os produtos retornados pela função search_products.
+2. Se a função retornar 0 produtos, diga claramente que não encontrou produtos cadastrados.
+3. Ao mencionar produtos, cite EXATAMENTE os dados retornados (nome, preço em USD e BRL).
+4. Os produtos serão exibidos automaticamente em cards abaixo da sua resposta.
+5. Seja conciso e amigável. Foque em ajudar o cliente a encontrar o melhor produto.
+6. Se o cliente pedir algo que não temos, sugira categorias que temos disponíveis.
+`;
+
         let run = await client.beta.threads.runs.create(threadId, {
             assistant_id: ASSISTANT_ID,
+            additional_instructions: additionalInstructions,
         });
 
         console.log(`🚀 Run iniciado: ${run.id}`);
