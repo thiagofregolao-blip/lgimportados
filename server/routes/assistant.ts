@@ -71,11 +71,25 @@ async function searchProducts(params: {
             conditions.push(lte(products.priceUSD, maxWithMargin.toString()));
         }
 
+        console.log(`🔍 Buscando produtos com condições:`, JSON.stringify(params));
+
         const found = await db.select()
             .from(products)
             .where(and(...conditions))
             .limit(params.limit || 10)
             .orderBy(desc(products.featured), desc(products.createdAt));
+
+        console.log(`📦 Produtos encontrados: ${found.length}`);
+
+        // Se não encontrou nada, retornar mensagem clara
+        if (found.length === 0) {
+            return {
+                success: true,
+                count: 0,
+                products: [],
+                message: `Não encontrei produtos para "${params.query || 'busca geral'}". O catálogo pode estar vazio ou o termo não corresponde aos produtos cadastrados.`
+            };
+        }
 
         return {
             success: true,
@@ -95,7 +109,8 @@ async function searchProducts(params: {
             })),
         };
     } catch (error: any) {
-        return { success: false, error: error.message };
+        console.error('❌ Erro na busca:', error.message);
+        return { success: false, error: error.message, products: [] };
     }
 }
 
