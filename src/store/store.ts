@@ -386,10 +386,35 @@ export const useStore = create<StoreState>()(
 
             reorderBanners: (banners) => set({ banners }),
 
-            // Product actions
-            addProduct: (product) => set((state) => ({
-                products: [...state.products, { ...product, id: generateId() }]
-            })),
+            // Product actions (synced with API)
+            addProduct: (product) => {
+                const newId = generateId();
+
+                // Save to local state first
+                set((state) => ({
+                    products: [...state.products, { ...product, id: newId }]
+                }));
+
+                // Sync with backend API (fire and forget, log errors)
+                fetch('/api/products', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: product.name,
+                        priceUSD: product.priceUSD,
+                        priceBRL: product.priceBRL,
+                        priceBrazil: product.priceBrazil,
+                        image: product.image,
+                        category: product.category,
+                        store: product.store || 'LG Importados',
+                        discount: product.discount,
+                        isNew: product.isNew,
+                        featured: product.featured,
+                    })
+                }).then(res => res.json())
+                    .then(data => console.log('✅ Product synced to database:', data))
+                    .catch(err => console.error('❌ Failed to sync product:', err));
+            },
 
             updateProduct: (id, product) => set((state) => ({
                 products: state.products.map((p) => p.id === id ? { ...p, ...product } : p)
