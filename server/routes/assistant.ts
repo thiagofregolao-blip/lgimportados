@@ -40,15 +40,17 @@ async function searchProducts(params: {
     limit?: number;
 }) {
     try {
-        const conditions: any[] = [eq(products.active, true)];
+        // Não filtrar por active para garantir que encontre produtos
+        // (muitos produtos podem ter active = NULL se foram inseridos antes do campo existir)
+        const conditions: any[] = [];
 
         if (params.query) {
+            const searchTerm = `%${params.query.toLowerCase()}%`;
             conditions.push(
                 or(
-                    ilike(products.name, `%${params.query}%`),
-                    ilike(products.description || '', `%${params.query}%`),
-                    ilike(products.category, `%${params.query}%`),
-                    ilike(products.brand || '', `%${params.query}%`)
+                    ilike(products.name, searchTerm),
+                    ilike(products.category, searchTerm),
+                    ilike(products.brand, searchTerm)
                 )
             );
         }
@@ -73,9 +75,13 @@ async function searchProducts(params: {
 
         console.log(`🔍 Buscando produtos com condições:`, JSON.stringify(params));
 
-        const found = await db.select()
-            .from(products)
-            .where(and(...conditions))
+        // Se não tem conditions, busca todos; senão, aplica os filtros
+        const baseQuery = db.select().from(products);
+        const queryWithWhere = conditions.length > 0
+            ? baseQuery.where(and(...conditions))
+            : baseQuery;
+
+        const found = await queryWithWhere
             .limit(params.limit || 10)
             .orderBy(desc(products.featured), desc(products.createdAt));
 
