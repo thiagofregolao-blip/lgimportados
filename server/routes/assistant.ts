@@ -1,17 +1,27 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import OpenAI from 'openai';
 import { db } from '../db.js';
-import { products, aiSearchAnalytics, assistantSessions, assistantMessages } from '../schema.js';
-import { eq, ilike, desc, sql, and } from 'drizzle-orm';
+import { products, aiSearchAnalytics } from '../schema.js';
+import { eq, ilike, desc, sql, and, or } from 'drizzle-orm';
 
 export const assistantRoutes = Router();
 
 // ============================================
-// INICIALIZAR OPENAI
+// INICIALIZAR OPENAI (Lazy - só quando necessário)
 // ============================================
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-});
+let openai: OpenAI | null = null;
+
+function getOpenAI(): OpenAI | null {
+    if (!process.env.OPENAI_API_KEY) {
+        return null;
+    }
+    if (!openai) {
+        openai = new OpenAI({
+            apiKey: process.env.OPENAI_API_KEY,
+        });
+    }
+    return openai;
+}
 
 // ============================================
 // PIPELINE DE PROCESSAMENTO
@@ -206,35 +216,38 @@ assistantRoutes.post('/stream', async (req, res) => {
         // 4. Gerar resposta com OpenAI (se configurado)
         let aiResponse = '';
 
-        if (process.env.OPENAI_API_KEY && foundProducts.length > 0) {
-            try {
-                const completion = await openai.chat.completions.create({
-                    model: 'gpt-4o-mini',
-                    messages: [
-                        {
-                            role: 'system',
-                            content: `Você é o assistente de vendas da LG Importados, uma loja de produtos importados do Paraguai.
+        if (foundProducts.length > 0) {
+            const client = getOpenAI();
+            if (client) {
+                try {
+                    const completion = await client.chat.completions.create({
+                        model: 'gpt-4o-mini',
+                        messages: [
+                            {
+                                role: 'system',
+                                content: `Você é o assistente de vendas da LG Importados, uma loja de produtos importados do Paraguai.
 Seja breve, amigável e use emojis. Fale em português brasileiro.
 Destaque que os preços são em dólar e muito mais baratos que no Brasil.
 Não invente informações sobre produtos que não existem.`
-                        },
-                        {
-                            role: 'user',
-                            content: `O cliente perguntou: "${message}"
+                            },
+                            {
+                                role: 'user',
+                                content: `O cliente perguntou: "${message}"
               
 Encontrei ${foundProducts.length} produto(s):
-${foundProducts.slice(0, 3).map(p => `- ${p.name}: US$ ${p.priceUSD} (economia de ~${p.discount || 20}% vs Brasil)`).join('\n')}
+${foundProducts.slice(0, 3).map((p: any) => `- ${p.name}: US$ ${p.priceUSD} (economia de ~${p.discount || 20}% vs Brasil)`).join('\n')}
 
 Gere uma resposta curta (máximo 2 frases) apresentando os produtos.`
-                        }
-                    ],
-                    max_tokens: 150,
-                    temperature: 0.7,
-                });
+                            }
+                        ],
+                        max_tokens: 150,
+                        temperature: 0.7,
+                    });
 
-                aiResponse = completion.choices[0]?.message?.content || '';
-            } catch (error) {
-                console.error('❌ OpenAI error:', error);
+                    aiResponse = completion.choices[0]?.message?.content || '';
+                } catch (error) {
+                    console.error('❌ OpenAI error:', error);
+                }
             }
         }
 
@@ -379,8 +392,9 @@ assistantRoutes.post('/analyze-image', async (req, res) => {
         }
 
         // Fallback: OpenAI Vision
-        if (process.env.OPENAI_API_KEY) {
-            const response = await openai.chat.completions.create({
+        const openaiClient = getOpenAI();
+        if (openaiClient) {
+            const response = await openaiClient.chat.completions.create({
                 model: 'gpt-4o',
                 messages: [
                     {
