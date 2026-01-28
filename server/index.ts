@@ -1,10 +1,15 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { assistantRoutes } from './routes/assistant.js';
 import { analyticsRoutes } from './routes/analytics.js';
 import { pricesRoutes } from './routes/prices.js';
 import { productsRoutes } from './routes/products.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -13,7 +18,9 @@ const PORT = process.env.PORT || 3001;
 // MIDDLEWARES
 // ============================================
 app.use(cors({
-    origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
+    origin: process.env.NODE_ENV === 'production'
+        ? true // Aceitar qualquer origem em produção
+        : ['http://localhost:5173', 'http://127.0.0.1:5173'],
     credentials: true,
 }));
 app.use(express.json({ limit: '10mb' })); // Para imagens base64
@@ -34,8 +41,24 @@ app.get('/api/health', (req, res) => {
         status: 'ok',
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || 'development',
+        database: process.env.DATABASE_URL ? 'configured' : 'missing',
     });
 });
+
+// ============================================
+// SERVIR FRONTEND ESTÁTICO (Produção)
+// ============================================
+if (process.env.NODE_ENV === 'production') {
+    // Servir arquivos estáticos da pasta dist
+    app.use(express.static(path.join(__dirname, '..', 'dist')));
+
+    // SPA fallback - qualquer rota não-API vai para o index.html
+    app.get('*', (req, res) => {
+        if (!req.path.startsWith('/api')) {
+            res.sendFile(path.join(__dirname, '..', 'dist', 'index.html'));
+        }
+    });
+}
 
 // ============================================
 // ERROR HANDLER
@@ -58,6 +81,7 @@ app.listen(PORT, () => {
 📡 Listening on port ${PORT}
 🔗 http://localhost:${PORT}
 📊 Environment: ${process.env.NODE_ENV || 'development'}
+🗄️  Database: ${process.env.DATABASE_URL ? '✅ Configured' : '❌ Missing'}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
   `);
 });
