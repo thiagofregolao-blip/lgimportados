@@ -10,11 +10,13 @@ interface Product {
     name: string;
     priceUSD: number;
     priceBRL: number;
-    priceBrazil: number | null;
-    image: string;
-    category: string;
+    priceBrazil?: number | null;
+    image?: string;
+    category?: string;
     discount?: number;
-    store: string;
+    store?: string;
+    brand?: string;
+    description?: string;
 }
 
 interface UseAISearchResult {
@@ -26,6 +28,7 @@ interface UseAISearchResult {
     products: Product[];
     suggestions: string[];
     sessionId: string;
+    threadId: string | null;
     submit: (message?: string) => void;
     clearMessages: () => void;
     fetchSuggestions: (q: string) => void;
@@ -38,6 +41,10 @@ export function useAISearch(): UseAISearchResult {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [products, setProducts] = useState<Product[]>([]);
     const [suggestions, setSuggestions] = useState<string[]>([]);
+    const [threadId, setThreadId] = useState<string | null>(() => {
+        // Recuperar threadId da sessão anterior
+        return localStorage.getItem('lg.ai.threadId');
+    });
     const [sessionId] = useState(() => {
         const key = 'lg.ai.sessionId';
         let sid = localStorage.getItem(key);
@@ -78,6 +85,7 @@ export function useAISearch(): UseAISearchResult {
                 body: JSON.stringify({
                     message: messageToSend,
                     sessionId,
+                    threadId, // Reutilizar thread existente
                     horaLocal: new Date().getHours(),
                 }),
                 signal: abortControllerRef.current.signal,
@@ -110,7 +118,16 @@ export function useAISearch(): UseAISearchResult {
                         try {
                             const data = JSON.parse(eventData);
 
-                            if (data.text) {
+                            // Guardar threadId se receber novo
+                            if (data.threadId && !threadId) {
+                                setThreadId(data.threadId);
+                                localStorage.setItem('lg.ai.threadId', data.threadId);
+                            }
+
+                            if (data.type === 'message' && data.text) {
+                                accumulatedText = data.text;
+                                setStreaming(data.text);
+                            } else if (data.text) {
                                 accumulatedText = data.text;
                                 setStreaming(data.text);
                             }
@@ -119,7 +136,7 @@ export function useAISearch(): UseAISearchResult {
                                 setProducts(data.products);
                             }
 
-                            if (data.done) {
+                            if (data.type === 'done' || data.done) {
                                 break;
                             }
                         } catch (e) {
@@ -189,6 +206,7 @@ export function useAISearch(): UseAISearchResult {
         products,
         suggestions,
         sessionId,
+        threadId,
         submit,
         clearMessages,
         fetchSuggestions,

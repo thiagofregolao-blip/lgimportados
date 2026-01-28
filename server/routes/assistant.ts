@@ -2,13 +2,16 @@ import { Router, Request, Response } from 'express';
 import OpenAI from 'openai';
 import { db } from '../db.js';
 import { products, aiSearchAnalytics } from '../schema.js';
-import { eq, ilike, desc, sql, and, or } from 'drizzle-orm';
+import { eq, ilike, desc, sql, and, or, gte, lte } from 'drizzle-orm';
 
 export const assistantRoutes = Router();
 
 // ============================================
-// INICIALIZAR OPENAI (Lazy - só quando necessário)
+// CONFIGURAÇÃO DO ASSISTENTE
 // ============================================
+const ASSISTANT_ID = 'asst_pfv4n8nb2XoiQpRoailgeLCU';
+
+// Inicialização lazy do OpenAI
 let openai: OpenAI | null = null;
 
 function getOpenAI(): OpenAI | null {
@@ -24,131 +27,140 @@ function getOpenAI(): OpenAI | null {
 }
 
 // ============================================
-// PIPELINE DE PROCESSAMENTO
+// IMPLEMENTAÇÃO DAS FUNCTIONS
 // ============================================
 
-// Detectar intenção da mensagem
-function detectIntent(message: string): string {
-    const lower = message.toLowerCase();
+// Function: search_products - Buscar produtos no banco
+async function searchProducts(params: {
+    query?: string;
+    category?: string;
+    brand?: string;
+    min_price?: number;
+    max_price?: number;
+    limit?: number;
+}) {
+    try {
+        const conditions: any[] = [eq(products.active, true)];
 
-    if (/^(oi|olá|hello|bom dia|boa tarde|boa noite|tudo bem|ei|e aí)/.test(lower)) {
-        return 'greeting';
-    }
-    if (/como (usar|funciona)|ajuda|help|o que você faz/.test(lower)) {
-        return 'help';
-    }
-    if (/(mais barato|menor preço|preço baixo|desconto|promoção|barato)/.test(lower)) {
-        return 'price';
-    }
-    if (/(comparar|versus|vs|diferença entre|melhor entre)/.test(lower)) {
-        return 'compare';
-    }
-    if (/(recomenda|sugere|melhor|qual escolher|indica)/.test(lower)) {
-        return 'recommend';
-    }
-    if (/(obrigado|valeu|agradeço|tchau|até mais)/.test(lower)) {
-        return 'farewell';
-    }
+        if (params.query) {
+            conditions.push(
+                or(
+                    ilike(products.name, `%${params.query}%`),
+                    ilike(products.description || '', `%${params.query}%`),
+                    ilike(products.category, `%${params.query}%`),
+                    ilike(products.brand || '', `%${params.query}%`)
+                )
+            );
+        }
 
-    return 'search';
+        if (params.category) {
+            conditions.push(ilike(products.category, `%${params.category}%`));
+        }
+
+        if (params.brand) {
+            conditions.push(ilike(products.brand || '', `%${params.brand}%`));
+        }
+
+        if (params.min_price) {
+            conditions.push(gte(products.priceUSD, params.min_price.toString()));
+        }
+
+        if (params.max_price) {
+            conditions.push(lte(products.priceUSD, params.max_price.toString()));
+        }
+
+        const found = await db.select()
+            .from(products)
+            .where(and(...conditions))
+            .limit(params.limit || 10)
+            .orderBy(desc(products.featured), desc(products.createdAt));
+
+        return {
+            success: true,
+            count: found.length,
+            products: found.map(p => ({
+                id: p.id,
+                name: p.name,
+                priceUSD: Number(p.priceUSD),
+                priceBRL: Number(p.priceBRL),
+                priceBrazil: p.priceBrazil ? Number(p.priceBrazil) : null,
+                discount: p.discount,
+                category: p.category,
+                brand: p.brand,
+                store: p.store,
+                image: p.image,
+                description: p.description,
+            })),
+        };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
 }
 
-// Extrair entidades (produto, categoria, marca)
-function extractEntities(message: string): { product?: string; category?: string; brand?: string; maxPrice?: number } {
-    const lower = message.toLowerCase();
-    const entities: { product?: string; category?: string; brand?: string; maxPrice?: number } = {};
+// Function: listar_promocoes - Listar produtos em promoção
+async function listarPromocoes(params: { limit?: number }) {
+    try {
+        const found = await db.select()
+            .from(products)
+            .where(
+                and(
+                    eq(products.active, true),
+                    sql`${products.discount} > 0`
+                )
+            )
+            .limit(params.limit || 10)
+            .orderBy(desc(products.discount));
 
-    // Detectar produtos
-    const productPatterns: Record<string, RegExp> = {
-        'iphone': /iphone\s*(\d+)?(\s*pro)?(\s*max)?/i,
-        'galaxy': /galaxy\s*(s|a|note|z)?\s*(\d+)?/i,
-        'playstation': /(ps5|ps4|playstation\s*\d?)/i,
-        'xbox': /xbox\s*(series)?\s*(x|s)?/i,
-        'airpods': /airpods\s*(pro)?(\s*\d)?/i,
-        'macbook': /macbook\s*(air|pro)?/i,
-        'apple watch': /apple\s*watch(\s*\d+)?(\s*ultra)?/i,
+        return {
+            success: true,
+            count: found.length,
+            products: found.map(p => ({
+                id: p.id,
+                name: p.name,
+                priceUSD: Number(p.priceUSD),
+                priceBRL: Number(p.priceBRL),
+                discount: p.discount,
+                category: p.category,
+                image: p.image,
+            })),
+        };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+// Function: adicionar_lista_compras - Placeholder (retorna instrução)
+async function adicionarListaCompras(params: { product_id: number }) {
+    // Esta função é um placeholder - a ação real acontece no frontend
+    return {
+        success: true,
+        message: `Produto ${params.product_id} adicionado à lista de compras. O cliente pode acessar sua lista na página de carrinho.`,
     };
+}
 
-    for (const [name, pattern] of Object.entries(productPatterns)) {
-        const match = lower.match(pattern);
-        if (match) {
-            entities.product = match[0].trim();
-            break;
-        }
-    }
-
-    // Detectar categorias
-    const categories: Record<string, string[]> = {
-        'celulares': ['celular', 'smartphone', 'telefone', 'iphone', 'galaxy', 'xiaomi'],
-        'notebooks': ['notebook', 'laptop', 'macbook', 'computador'],
-        'games': ['game', 'playstation', 'ps5', 'xbox', 'nintendo', 'console', 'jogo'],
-        'audio': ['fone', 'headphone', 'airpods', 'earbuds', 'caixa de som', 'jbl'],
-        'smartwatch': ['relógio', 'watch', 'smartwatch', 'apple watch'],
-        'perfumes': ['perfume', 'fragrância', 'colônia', 'eau de'],
-        'cosmeticos': ['maquiagem', 'batom', 'skincare', 'cosmético'],
+// Function: create_store_route - Placeholder para roteiro de lojas
+async function createStoreRoute(params: { product_ids: number[] }) {
+    // Placeholder - integraria com um serviço de mapas real
+    return {
+        success: true,
+        message: `Roteiro criado para ${params.product_ids.length} produtos. As lojas serão exibidas no mapa do Paraguai.`,
+        stores: ['Casa Liu', 'Cellshop', 'Mega Eletrônicos'], // Exemplo
     };
-
-    for (const [category, keywords] of Object.entries(categories)) {
-        if (keywords.some(k => lower.includes(k))) {
-            entities.category = category;
-            break;
-        }
-    }
-
-    // Detectar marcas
-    const brands = ['apple', 'samsung', 'xiaomi', 'sony', 'jbl', 'nintendo', 'microsoft', 'dell', 'lenovo', 'asus'];
-    for (const brand of brands) {
-        if (lower.includes(brand)) {
-            entities.brand = brand;
-            break;
-        }
-    }
-
-    // Detectar faixa de preço
-    const priceMatch = lower.match(/até\s*r?\$?\s*(\d+)/);
-    if (priceMatch) {
-        entities.maxPrice = parseInt(priceMatch[1]);
-    }
-
-    return entities;
 }
 
-// Normalizar query
-function normalizeQuery(query: string): string {
-    let normalized = query.toLowerCase().trim();
-    normalized = normalized.replace(/[^\w\sáéíóúãõâêîôûç]/gi, ' ');
-
-    const stopWords = ['quero', 'preciso', 'busco', 'procuro', 'me', 'um', 'uma', 'de', 'para', 'pode', 'ter', 'você'];
-    normalized = normalized.split(' ').filter(w => w.length > 1 && !stopWords.includes(w)).join(' ');
-
-    return normalized.replace(/\s+/g, ' ').trim();
-}
-
-// Gerar resposta para intenções sem busca
-function generateTextResponse(intent: string): string {
-    switch (intent) {
-        case 'greeting':
-            return '👋 Olá! Eu sou o assistente IA da LG Importados! Como posso ajudar você a encontrar os melhores produtos do Paraguai hoje?';
-        case 'help':
-            return `Posso te ajudar de várias formas:
-• 🔍 Buscar produtos: "iPhone 15 Pro" ou "fone JBL"
-• 💰 Achar mais barato: "celular mais barato"
-• 📊 Comparar: "comparar iPhone e Galaxy"
-• ✨ Recomendar: "me recomenda um perfume masculino"
-
-É só digitar o que você procura!`;
-        case 'farewell':
-            return '👋 Até mais! Volte sempre para conferir nossas ofertas do Paraguai! 🇵🇾';
-        default:
-            return 'Como posso ajudar você hoje?';
-    }
-}
+// Mapa de functions disponíveis
+const availableFunctions: Record<string, (params: any) => Promise<any>> = {
+    search_products: searchProducts,
+    listar_promocoes: listarPromocoes,
+    adicionar_lista_compras: adicionarListaCompras,
+    create_store_route: createStoreRoute,
+};
 
 // ============================================
-// ENDPOINT: STREAM SSE (Busca com IA)
+// ENDPOINT: STREAM SSE COM ASSISTANTS API
 // ============================================
-assistantRoutes.post('/stream', async (req, res) => {
-    const { message, sessionId, horaLocal } = req.body;
+assistantRoutes.post('/stream', async (req: Request, res: Response) => {
+    const { message, sessionId, threadId: existingThreadId } = req.body;
 
     if (!message) {
         return res.status(400).json({ success: false, message: 'Mensagem é obrigatória' });
@@ -164,140 +176,173 @@ assistantRoutes.post('/stream', async (req, res) => {
         res.write(`data: ${JSON.stringify(data)}\n\n`);
     };
 
-    try {
-        // 1. Processar mensagem através do pipeline
-        const intent = detectIntent(message);
-        const entities = extractEntities(message);
-        const normalizedQuery = normalizeQuery(message);
+    const client = getOpenAI();
 
-        console.log(`🤖 [Assistant] Intent: ${intent}, Query: "${normalizedQuery}"`, entities);
+    // Se não tem OpenAI, usa fallback local
+    if (!client) {
+        console.log('⚠️ OpenAI não configurada, usando fallback local');
+        const localResult = await searchProducts({ query: message });
+        const count = localResult.count ?? 0;
 
-        // 2. Se não precisa buscar, só responder
-        const noSearchIntents = ['greeting', 'help', 'farewell'];
-        if (noSearchIntents.includes(intent)) {
-            const textResponse = generateTextResponse(intent);
-            send({ text: textResponse, products: [], provider: 'local' });
-            send({ done: true });
+        let responseText = '';
+        if (localResult.success && count > 0) {
+            responseText = `🎯 Encontrei ${count} produto(s) para "${message}"! Confira:`;
+        } else {
+            responseText = `😅 Não encontrei produtos para "${message}". Tente buscar algo diferente!`;
+        }
 
-            // Registrar analytics
+        send({
+            type: 'message',
+            text: responseText,
+            products: localResult.success ? localResult.products : [],
+            provider: 'local',
+        });
+        send({ type: 'done' });
+
+        // Registrar analytics
+        try {
             await db.insert(aiSearchAnalytics).values({
                 sessionId: sessionId || 'anonymous',
                 rawQuery: message,
-                normalizedQuery,
-                searchIntent: intent,
-                resultsCount: 0,
-                noResultsFound: false,
-                source: 'openai',
+                normalizedQuery: message.toLowerCase(),
+                searchIntent: 'search',
+                resultsCount: localResult.count ?? 0,
+                noResultsFound: !localResult.count,
+                source: 'local',
             });
-
-            return res.end();
+        } catch (e) {
+            console.error('Analytics error:', e);
         }
 
-        // 3. Buscar produtos no banco
-        const searchTerm = entities.product || entities.category || normalizedQuery || message;
+        return res.end();
+    }
 
-        const foundProducts = await db.select().from(products)
-            .where(
-                and(
-                    eq(products.active, true),
-                    sql`(
-            ${products.name} ILIKE ${`%${searchTerm}%`} OR 
-            ${products.category} ILIKE ${`%${searchTerm}%`} OR
-            ${products.brand} ILIKE ${`%${searchTerm}%`} OR
-            ${products.description} ILIKE ${`%${searchTerm}%`}
-          )`
-                )
-            )
-            .limit(10)
-            .orderBy(desc(products.featured), desc(products.createdAt));
+    try {
+        // 1. Criar ou reutilizar thread
+        let threadId = existingThreadId;
 
-        console.log(`📦 Encontrados ${foundProducts.length} produtos para "${searchTerm}"`);
+        if (!threadId) {
+            const thread = await client.beta.threads.create();
+            threadId = thread.id;
+            console.log(`🧵 Nova thread criada: ${threadId}`);
+        }
 
-        // 4. Gerar resposta com OpenAI (se configurado)
-        let aiResponse = '';
+        send({ type: 'thread', threadId });
 
-        if (foundProducts.length > 0) {
-            const client = getOpenAI();
-            if (client) {
-                try {
-                    const completion = await client.chat.completions.create({
-                        model: 'gpt-4o-mini',
-                        messages: [
-                            {
-                                role: 'system',
-                                content: `Você é o assistente de vendas da LG Importados, uma loja de produtos importados do Paraguai.
-Seja breve, amigável e use emojis. Fale em português brasileiro.
-Destaque que os preços são em dólar e muito mais baratos que no Brasil.
-Não invente informações sobre produtos que não existem.`
-                            },
-                            {
-                                role: 'user',
-                                content: `O cliente perguntou: "${message}"
-              
-Encontrei ${foundProducts.length} produto(s):
-${foundProducts.slice(0, 3).map((p: any) => `- ${p.name}: US$ ${p.priceUSD} (economia de ~${p.discount || 20}% vs Brasil)`).join('\n')}
+        // 2. Adicionar mensagem do usuário à thread
+        await client.beta.threads.messages.create(threadId, {
+            role: 'user',
+            content: message,
+        });
 
-Gere uma resposta curta (máximo 2 frases) apresentando os produtos.`
-                            }
-                        ],
-                        max_tokens: 150,
-                        temperature: 0.7,
-                    });
+        // 3. Executar o assistente
+        let run = await client.beta.threads.runs.create(threadId, {
+            assistant_id: ASSISTANT_ID,
+        });
 
-                    aiResponse = completion.choices[0]?.message?.content || '';
-                } catch (error) {
-                    console.error('❌ OpenAI error:', error);
+        console.log(`🚀 Run iniciado: ${run.id}`);
+
+        // 4. Polling para aguardar conclusão
+        const maxAttempts = 60; // 60 segundos máximo
+        let attempts = 0;
+        let productsFound: any[] = [];
+
+        while (run.status !== 'completed' && run.status !== 'failed' && run.status !== 'cancelled') {
+            attempts++;
+            if (attempts > maxAttempts) {
+                throw new Error('Timeout aguardando resposta do assistente');
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            run = await client.beta.threads.runs.retrieve(threadId, run.id);
+
+            console.log(`⏳ Run status: ${run.status}`);
+
+            // 5. Se precisa executar functions (tool_calls)
+            if (run.status === 'requires_action' && run.required_action?.type === 'submit_tool_outputs') {
+                const toolCalls = run.required_action.submit_tool_outputs.tool_calls;
+                const toolOutputs: { tool_call_id: string; output: string }[] = [];
+
+                for (const toolCall of toolCalls) {
+                    const functionName = toolCall.function.name;
+                    const functionArgs = JSON.parse(toolCall.function.arguments);
+
+                    console.log(`🔧 Executando function: ${functionName}`, functionArgs);
+
+                    if (availableFunctions[functionName]) {
+                        const result = await availableFunctions[functionName](functionArgs);
+
+                        // Guardar produtos encontrados
+                        if (result.products && result.products.length > 0) {
+                            productsFound = [...productsFound, ...result.products];
+                        }
+
+                        toolOutputs.push({
+                            tool_call_id: toolCall.id,
+                            output: JSON.stringify(result),
+                        });
+                    } else {
+                        toolOutputs.push({
+                            tool_call_id: toolCall.id,
+                            output: JSON.stringify({ error: `Function ${functionName} not implemented` }),
+                        });
+                    }
                 }
+
+                // Submeter resultados das functions
+                run = await client.beta.threads.runs.submitToolOutputs(threadId, run.id, {
+                    tool_outputs: toolOutputs,
+                });
             }
         }
 
-        // 5. Fallback para resposta template
-        if (!aiResponse) {
-            if (foundProducts.length === 0) {
-                aiResponse = `😅 Não encontrei "${searchTerm}" no momento. Quer que eu busque algo parecido?`;
-            } else if (foundProducts.length <= 3) {
-                aiResponse = `🎯 Encontrei ${foundProducts.length} opção de ${searchTerm}! Confira:`;
-            } else {
-                aiResponse = `🎉 Encontrei ${foundProducts.length} ofertas de ${searchTerm}! Dá uma olhada:`;
-            }
+        if (run.status === 'failed') {
+            throw new Error(run.last_error?.message || 'Erro ao processar a mensagem');
         }
 
-        // 6. Enviar resposta via SSE
+        // 6. Obter mensagens da thread
+        const messages = await client.beta.threads.messages.list(threadId, {
+            order: 'desc',
+            limit: 1,
+        });
+
+        const assistantMessage = messages.data.find(m => m.role === 'assistant');
+        let responseText = '';
+
+        if (assistantMessage && assistantMessage.content[0]?.type === 'text') {
+            responseText = assistantMessage.content[0].text.value;
+        }
+
+        // 7. Enviar resposta via SSE
         send({
-            text: aiResponse,
-            products: foundProducts.map(p => ({
-                id: p.id,
-                name: p.name,
-                priceUSD: Number(p.priceUSD),
-                priceBRL: Number(p.priceBRL),
-                priceBrazil: p.priceBrazil ? Number(p.priceBrazil) : null,
-                image: p.image,
-                category: p.category,
-                discount: p.discount,
-                store: p.store,
-            })),
-            provider: process.env.OPENAI_API_KEY ? 'openai' : 'local',
+            type: 'message',
+            text: responseText,
+            products: productsFound,
+            threadId,
+            provider: 'openai-assistant',
         });
 
-        send({ done: true });
+        send({ type: 'done' });
 
-        // 7. Registrar analytics
-        await db.insert(aiSearchAnalytics).values({
-            sessionId: sessionId || 'anonymous',
-            rawQuery: message,
-            normalizedQuery,
-            detectedCategory: entities.category,
-            detectedBrand: entities.brand,
-            searchIntent: intent,
-            resultsCount: foundProducts.length,
-            productsShown: foundProducts.map(p => p.id),
-            noResultsFound: foundProducts.length === 0,
-            source: 'openai',
-        });
+        // 8. Registrar analytics
+        try {
+            await db.insert(aiSearchAnalytics).values({
+                sessionId: sessionId || 'anonymous',
+                rawQuery: message,
+                normalizedQuery: message.toLowerCase(),
+                searchIntent: 'search',
+                resultsCount: productsFound.length,
+                productsShown: productsFound.map((p: any) => p.id),
+                noResultsFound: productsFound.length === 0,
+                source: 'openai-assistant',
+            });
+        } catch (e) {
+            console.error('Analytics error:', e);
+        }
 
     } catch (error: any) {
-        console.error('❌ Stream error:', error);
-        send({ error: error.message });
+        console.error('❌ Assistant error:', error);
+        send({ type: 'error', message: error.message });
     }
 
     res.end();
@@ -306,7 +351,7 @@ Gere uma resposta curta (máximo 2 frases) apresentando os produtos.`
 // ============================================
 // ENDPOINT: SUGESTÕES (Autocomplete)
 // ============================================
-assistantRoutes.get('/suggestions', async (req, res) => {
+assistantRoutes.get('/suggestions', async (req: Request, res: Response) => {
     try {
         const { q } = req.query;
 
@@ -314,7 +359,6 @@ assistantRoutes.get('/suggestions', async (req, res) => {
             return res.json({ success: true, suggestions: [] });
         }
 
-        // Buscar produtos que começam com a query
         const found = await db.select({ name: products.name })
             .from(products)
             .where(
@@ -336,7 +380,7 @@ assistantRoutes.get('/suggestions', async (req, res) => {
 // ============================================
 // ENDPOINT: ANÁLISE DE IMAGEM (Cadastro Rápido)
 // ============================================
-assistantRoutes.post('/analyze-image', async (req, res) => {
+assistantRoutes.post('/analyze-image', async (req: Request, res: Response) => {
     try {
         const { imageBase64 } = req.body;
 
@@ -360,7 +404,6 @@ assistantRoutes.post('/analyze-image', async (req, res) => {
   "confidence": 0.0
 }`;
 
-            // Extrair base64 puro
             const base64Data = imageBase64.includes(',')
                 ? imageBase64.split(',')[1]
                 : imageBase64;
@@ -376,8 +419,6 @@ assistantRoutes.post('/analyze-image', async (req, res) => {
             ]);
 
             const responseText = result.response.text();
-
-            // Limpar e parsear JSON
             let cleanJson = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
             const jsonMatch = cleanJson.match(/\{[\s\S]*\}/);
             if (jsonMatch) {
@@ -385,7 +426,6 @@ assistantRoutes.post('/analyze-image', async (req, res) => {
             }
 
             const analysis = JSON.parse(cleanJson);
-
             console.log('✅ Produto identificado:', analysis.name);
 
             return res.json({ success: true, analysis });
@@ -426,7 +466,6 @@ assistantRoutes.post('/analyze-image', async (req, res) => {
             }
 
             const analysis = JSON.parse(cleanJson);
-
             return res.json({ success: true, analysis });
         }
 
