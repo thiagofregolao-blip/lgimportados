@@ -35,8 +35,8 @@ async function searchProducts(params: {
     query?: string;
     category?: string;
     brand?: string;
-    min_price?: number;
-    max_price?: number;
+    minPrice?: number;  // Alinhado com definição do Assistente
+    maxPrice?: number;  // Alinhado com definição do Assistente
     limit?: number;
 }) {
     try {
@@ -61,12 +61,14 @@ async function searchProducts(params: {
             conditions.push(ilike(products.brand || '', `%${params.brand}%`));
         }
 
-        if (params.min_price) {
-            conditions.push(gte(products.priceUSD, params.min_price.toString()));
+        if (params.minPrice) {
+            conditions.push(gte(products.priceUSD, params.minPrice.toString()));
         }
 
-        if (params.max_price) {
-            conditions.push(lte(products.priceUSD, params.max_price.toString()));
+        if (params.maxPrice) {
+            // Se não encontrar no valor exato, busca até 20% acima (conforme definição)
+            const maxWithMargin = params.maxPrice * 1.2;
+            conditions.push(lte(products.priceUSD, maxWithMargin.toString()));
         }
 
         const found = await db.select()
