@@ -7,7 +7,7 @@
     "dev": "concurrently \"vite --host\" \"tsx watch server/index.ts\"",
     "dev:frontend": "vite --host",
     "dev:backend": "tsx watch server/index.ts",
-    "build": "tsc && vite build && tsc -p tsconfig.server.json && npm run db:push",
+    "build": "tsc && vite build && tsc -p tsconfig.server.json",
     "start": "node dist/server/index.js",
     "preview": "vite preview",
     "db:generate": "drizzle-kit generate",

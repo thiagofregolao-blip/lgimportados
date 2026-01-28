@@ -7,6 +7,7 @@ import { assistantRoutes } from './routes/assistant.js';
 import { analyticsRoutes } from './routes/analytics.js';
 import { pricesRoutes } from './routes/prices.js';
 import { productsRoutes } from './routes/products.js';
+import { initializeDatabase } from './initDb.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -77,7 +78,7 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 // ============================================
 // START SERVER
 // ============================================
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
     console.log(`
 🚀 LG Importados API Server
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -87,6 +88,11 @@ app.listen(PORT, () => {
 🗄️  Database: ${process.env.DATABASE_URL ? '✅ Configured' : '❌ Missing'}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
   `);
+
+    // Inicializar tabelas do banco de dados
+    if (process.env.DATABASE_URL) {
+        await initializeDatabase();
+    }
 });
 
 export default app;
