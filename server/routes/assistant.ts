@@ -222,7 +222,8 @@ assistantRoutes.post('/stream', async (req: Request, res: Response) => {
         });
         send({ type: 'done' });
 
-        // Registrar analytics
+        // Registrar analytics (DESABILITADO - tabela ainda não existe)
+        /*
         try {
             await db.insert(aiSearchAnalytics).values({
                 sessionId: sessionId || 'anonymous',
@@ -236,6 +237,7 @@ assistantRoutes.post('/stream', async (req: Request, res: Response) => {
         } catch (e) {
             console.error('Analytics error:', e);
         }
+        */
 
         return res.end();
     }
@@ -358,7 +360,9 @@ REGRAS CRÍTICAS PARA ESTA RESPOSTA:
 
         send({ type: 'done' });
 
-        // 8. Registrar analytics
+        // 8. Registrar analytics (DESABILITADO - tabela ainda não existe)
+        // TODO: Rodar migrations para criar tabela ai_search_analytics
+        /*
         try {
             await db.insert(aiSearchAnalytics).values({
                 sessionId: sessionId || 'anonymous',
@@ -373,6 +377,7 @@ REGRAS CRÍTICAS PARA ESTA RESPOSTA:
         } catch (e) {
             console.error('Analytics error:', e);
         }
+        */
 
     } catch (error: any) {
         console.error('❌ Assistant error:', error);
