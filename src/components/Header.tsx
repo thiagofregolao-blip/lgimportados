@@ -1,5 +1,4 @@
 import { ShoppingCart, User, Menu } from 'lucide-react';
-import { AISearchBar } from './AISearchBar';
 
 export function Header() {
     return (
@@ -8,11 +7,6 @@ export function Header() {
                 <a href="/" className="header-logo">
                     <img src="/logo.png" alt="LG Importados" className="header-logo-image" />
                 </a>
-
-                {/* Barra de Busca IA */}
-                <div className="header-search">
-                    <AISearchBar />
-                </div>
 
                 <div className="header-actions">
                     <button className="header-action-btn" aria-label="Menu">
