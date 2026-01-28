@@ -12,7 +12,9 @@
     "preview": "vite preview",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio"
+    "db:migrate": "tsx server/migrate.ts",
+    "db:studio": "drizzle-kit studio",
+    "postbuild": "npm run db:push"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
