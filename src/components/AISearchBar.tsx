@@ -16,7 +16,6 @@ export function AISearchBar({ onProductClick }: AISearchBarProps) {
         products,
         suggestions,
         submit,
-        clearMessages,
         fetchSuggestions,
     } = useAISearch();
 
