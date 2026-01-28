@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { db } from '../db.js';
 import { aiSearchAnalytics, aiInsights } from '../schema.js';
 import { eq, desc, gte, sql, count, and } from 'drizzle-orm';
@@ -8,7 +8,7 @@ export const analyticsRoutes = Router();
 // ============================================
 // REGISTRAR BUSCA (chamado pelo frontend)
 // ============================================
-analyticsRoutes.post('/search', async (req, res) => {
+analyticsRoutes.post('/search', async (req: Request, res: Response) => {
     try {
         const {
             sessionId,
@@ -54,7 +54,7 @@ analyticsRoutes.post('/search', async (req, res) => {
 // ============================================
 // TOP TERMOS BUSCADOS
 // ============================================
-analyticsRoutes.get('/top-searches', async (req, res) => {
+analyticsRoutes.get('/top-searches', async (req: Request, res: Response) => {
     try {
         const days = parseInt(req.query.days as string) || 7;
         const limit = parseInt(req.query.limit as string) || 10;
@@ -84,7 +84,7 @@ analyticsRoutes.get('/top-searches', async (req, res) => {
 // ============================================
 // DEMANDA NÃO ATENDIDA (buscas sem resultados)
 // ============================================
-analyticsRoutes.get('/unmet-demand', async (req, res) => {
+analyticsRoutes.get('/unmet-demand', async (req: Request, res: Response) => {
     try {
         const days = parseInt(req.query.days as string) || 7;
         const limit = parseInt(req.query.limit as string) || 10;
@@ -124,17 +124,19 @@ analyticsRoutes.get('/unmet-demand', async (req, res) => {
 // ============================================
 // INSIGHTS GERADOS PELA IA
 // ============================================
-analyticsRoutes.get('/insights', async (req, res) => {
+analyticsRoutes.get('/insights', async (req: Request, res: Response) => {
     try {
         const unreadOnly = req.query.unreadOnly === 'true';
 
-        let query = db.select().from(aiInsights);
-
-        if (unreadOnly) {
-            query = query.where(eq(aiInsights.isRead, false));
-        }
-
-        const result = await query.orderBy(desc(aiInsights.createdAt)).limit(20);
+        // Executar query com ou sem filtro
+        const result = unreadOnly
+            ? await db.select().from(aiInsights)
+                .where(eq(aiInsights.isRead, false))
+                .orderBy(desc(aiInsights.createdAt))
+                .limit(20)
+            : await db.select().from(aiInsights)
+                .orderBy(desc(aiInsights.createdAt))
+                .limit(20);
 
         res.json({ success: true, insights: result });
     } catch (error: any) {
@@ -146,7 +148,7 @@ analyticsRoutes.get('/insights', async (req, res) => {
 // ============================================
 // DASHBOARD RESUMIDO
 // ============================================
-analyticsRoutes.get('/dashboard', async (req, res) => {
+analyticsRoutes.get('/dashboard', async (req: Request, res: Response) => {
     try {
         const days = parseInt(req.query.days as string) || 7;
         const startDate = new Date();

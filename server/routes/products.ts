@@ -1,28 +1,32 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { db } from '../db.js';
 import { products } from '../schema.js';
-import { eq, ilike, desc, and, sql } from 'drizzle-orm';
+import { eq, ilike, desc, and, sql, or } from 'drizzle-orm';
 
 export const productsRoutes = Router();
 
 // ============================================
 // LISTAR PRODUTOS
 // ============================================
-productsRoutes.get('/', async (req, res) => {
+productsRoutes.get('/', async (req: Request, res: Response) => {
     try {
         const { category, search, limit = 20 } = req.query;
 
-        let query = db.select().from(products).where(eq(products.active, true));
+        // Construir condições
+        const conditions = [eq(products.active, true)];
 
         if (category) {
-            query = query.where(eq(products.category, category as string));
+            conditions.push(eq(products.category, category as string));
         }
 
         if (search) {
-            query = query.where(ilike(products.name, `%${search}%`));
+            conditions.push(ilike(products.name, `%${search}%`));
         }
 
-        const result = await query.limit(Number(limit)).orderBy(desc(products.createdAt));
+        const result = await db.select().from(products)
+            .where(and(...conditions))
+            .limit(Number(limit))
+            .orderBy(desc(products.createdAt));
 
         res.json({ success: true, products: result });
     } catch (error: any) {
@@ -34,13 +38,14 @@ productsRoutes.get('/', async (req, res) => {
 // ============================================
 // BUSCAR PRODUTO POR ID
 // ============================================
-productsRoutes.get('/:id', async (req, res) => {
+productsRoutes.get('/:id', async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         const result = await db.select().from(products).where(eq(products.id, Number(id)));
 
         if (result.length === 0) {
-            return res.status(404).json({ success: false, message: 'Produto não encontrado' });
+            res.status(404).json({ success: false, message: 'Produto não encontrado' });
+            return;
         }
 
         res.json({ success: true, product: result[0] });
@@ -52,24 +57,27 @@ productsRoutes.get('/:id', async (req, res) => {
 // ============================================
 // BUSCA INTELIGENTE (para IA)
 // ============================================
-productsRoutes.get('/search/smart', async (req, res) => {
+productsRoutes.get('/search/smart', async (req: Request, res: Response) => {
     try {
-        const { q, category, brand, maxPrice, limit = 10 } = req.query;
+        const { q, limit = 10 } = req.query;
 
         if (!q) {
-            return res.status(400).json({ success: false, message: 'Query é obrigatória' });
+            res.status(400).json({ success: false, message: 'Query é obrigatória' });
+            return;
         }
+
+        const searchTerm = `%${q}%`;
 
         // Busca flexível por nome, categoria e marca
         const result = await db.select().from(products)
             .where(
                 and(
                     eq(products.active, true),
-                    sql`(
-            ${products.name} ILIKE ${`%${q}%`} OR 
-            ${products.category} ILIKE ${`%${q}%`} OR
-            ${products.brand} ILIKE ${`%${q}%`}
-          )`
+                    or(
+                        ilike(products.name, searchTerm),
+                        ilike(products.category, searchTerm),
+                        ilike(products.brand, searchTerm)
+                    )
                 )
             )
             .limit(Number(limit))
@@ -90,12 +98,13 @@ productsRoutes.get('/search/smart', async (req, res) => {
 // ============================================
 // CRIAR PRODUTO (Cadastro Rápido IA)
 // ============================================
-productsRoutes.post('/', async (req, res) => {
+productsRoutes.post('/', async (req: Request, res: Response) => {
     try {
         const { name, priceUSD, priceBRL, priceBrazil, image, category, store, brand, description, discount, isNew, featured } = req.body;
 
         if (!name || !priceUSD || !priceBRL) {
-            return res.status(400).json({ success: false, message: 'Nome, priceUSD e priceBRL são obrigatórios' });
+            res.status(400).json({ success: false, message: 'Nome, priceUSD e priceBRL são obrigatórios' });
+            return;
         }
 
         const result = await db.insert(products).values({
@@ -124,7 +133,7 @@ productsRoutes.post('/', async (req, res) => {
 // ============================================
 // ATUALIZAR PRODUTO
 // ============================================
-productsRoutes.put('/:id', async (req, res) => {
+productsRoutes.put('/:id', async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         const updates = req.body;
@@ -135,7 +144,8 @@ productsRoutes.put('/:id', async (req, res) => {
             .returning();
 
         if (result.length === 0) {
-            return res.status(404).json({ success: false, message: 'Produto não encontrado' });
+            res.status(404).json({ success: false, message: 'Produto não encontrado' });
+            return;
         }
 
         res.json({ success: true, product: result[0] });
@@ -147,7 +157,7 @@ productsRoutes.put('/:id', async (req, res) => {
 // ============================================
 // DELETAR PRODUTO (soft delete)
 // ============================================
-productsRoutes.delete('/:id', async (req, res) => {
+productsRoutes.delete('/:id', async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
 
@@ -157,7 +167,8 @@ productsRoutes.delete('/:id', async (req, res) => {
             .returning();
 
         if (result.length === 0) {
-            return res.status(404).json({ success: false, message: 'Produto não encontrado' });
+            res.status(404).json({ success: false, message: 'Produto não encontrado' });
+            return;
         }
 
         res.json({ success: true, message: 'Produto removido' });
