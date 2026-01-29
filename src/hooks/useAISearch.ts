@@ -101,6 +101,8 @@ export function useAISearch(): UseAISearchResult {
             readerRef.current = reader;
             const decoder = new TextDecoder();
             let buffer = '';
+            let fullTextReceived = '';
+            let productsReceived: Product[] = [];
 
             while (true) {
                 const { done, value } = await reader.read();
@@ -125,15 +127,13 @@ export function useAISearch(): UseAISearchResult {
                             }
 
                             if (data.type === 'message' && data.text) {
-                                accumulatedText = data.text;
-                                setStreaming(data.text);
+                                fullTextReceived = data.text;
                             } else if (data.text) {
-                                accumulatedText = data.text;
-                                setStreaming(data.text);
+                                fullTextReceived = data.text;
                             }
 
                             if (data.products && data.products.length > 0) {
-                                setProducts(data.products);
+                                productsReceived = data.products;
                             }
 
                             if (data.type === 'done' || data.done) {
@@ -143,6 +143,27 @@ export function useAISearch(): UseAISearchResult {
                             console.warn('SSE parse error:', e);
                         }
                     }
+                }
+            }
+
+            // Efeito de typing - mostrar texto caractere por caractere
+            if (fullTextReceived) {
+                accumulatedText = fullTextReceived;
+                const typingSpeed = 15; // ms por caractere (ajuste conforme necessário)
+
+                for (let i = 0; i <= fullTextReceived.length; i++) {
+                    await new Promise(resolve => setTimeout(resolve, typingSpeed));
+                    setStreaming(fullTextReceived.slice(0, i));
+
+                    // Se tiver produtos, mostrar após 30% do texto
+                    if (productsReceived.length > 0 && i === Math.floor(fullTextReceived.length * 0.3)) {
+                        setProducts(productsReceived);
+                    }
+                }
+
+                // Garantir que produtos apareçam no final
+                if (productsReceived.length > 0) {
+                    setProducts(productsReceived);
                 }
             }
         } catch (error: any) {
