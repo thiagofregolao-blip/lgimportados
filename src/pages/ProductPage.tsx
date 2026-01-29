@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { ShoppingCart, ArrowLeftRight, X, Loader2, TrendingDown, Store, Plus, Minus, CreditCard, Truck } from 'lucide-react';
 import { useStore, Product } from '../store/store';
 import { TopBar } from '../components/TopBar';
@@ -80,19 +80,14 @@ export function ProductPage() {
         setIsCartModalOpen(true);
     };
 
+    const navigate = useNavigate(); // Add hook usage
+
+    // ... (inside component)
+
     const handleGoToCheckout = () => {
         if (!product) return;
-        const message = encodeURIComponent(
-            `*Novo Pedido Iniciado!* 🛒\n\n` +
-            `Gostaria de finalizar a compra de:\n` +
-            `📦 *${product.name}*\n` +
-            `💵 Preço Unitário: US$ ${product.priceUSD}\n` +
-            `📊 Quantidade: ${quantity}\n` +
-            `💰 *Total: US$ ${(product.priceUSD * quantity).toLocaleString('pt-BR')}*\n` +
-            `📍 Loja: ${product.store || 'LG Importados'}`
-        );
-        window.open(`https://wa.me/5545999999999?text=${message}`, '_blank');
         setIsCartModalOpen(false);
+        navigate('/checkout');
     };
 
     if (!product) {

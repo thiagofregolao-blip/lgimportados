@@ -11,25 +11,9 @@ import { Footer } from './components/Footer';
 import { AdminPanel } from './pages/AdminPanel';
 import { ProductPage } from './pages/ProductPage';
 import { QuickProductPage } from './pages/QuickProductPage';
-import './styles/admin.css';
+import { CheckoutPage } from './pages/Checkout';
 
-// Home Page Component
-function HomePage() {
-    return (
-        <div className="app">
-            <TopBar />
-            <Header />
-            <main className="main-content">
-                <Hero />
-                <Categories />
-                <ProductGrid title="🔥 Ofertas do Dia" limit={4} />
-                <PriceCompare />
-                <ProductGrid title="Todos os Produtos" showAll={true} />
-            </main>
-            <Footer />
-        </div>
-    );
-}
+// ... (rest of imports)
 
 // Main App with Routes
 function App() {
@@ -47,6 +31,7 @@ function App() {
                 <Route path="/admin" element={<AdminPanel />} />
                 <Route path="/admin/quick-product" element={<QuickProductPage />} />
                 <Route path="/produto/:id" element={<ProductPage />} />
+                <Route path="/checkout" element={<CheckoutPage />} />
             </Routes>
         </BrowserRouter>
     );
