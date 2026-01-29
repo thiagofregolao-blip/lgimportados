@@ -7,7 +7,7 @@ import { Trash2, Plus, Minus, ArrowRight, ShoppingBag } from 'lucide-react';
 
 export function CartPage() {
     const navigate = useNavigate();
-    const { cart, removeFromCart, updateCartQuantity, cartTotal } = useStore();
+    const { cart, removeFromCart, updateCartQuantity } = useStore();
 
     // Cotação fixa (pode vir do store topBar.dollarRate se quiser)
     const EXCHANGE_RATE = 6.15;
