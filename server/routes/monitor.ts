@@ -49,6 +49,9 @@ monitorRoutes.post('/', async (req, res) => {
             status: 'active'
         }).returning();
 
+        // Disparar verificação inicial em background
+        runMonitorCheck(newMonitor[0].id).catch(err => console.error('Erro no check inicial:', err));
+
         res.json({ success: true, monitor: newMonitor[0] });
     } catch (error: any) {
         res.status(500).json({ success: false, error: error.message });
