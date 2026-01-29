@@ -245,9 +245,13 @@ return (
                     </div>
 
                     <div className="buy-actions">
-                        <button className="buy-btn primary" onClick={handleBuyNow}>
+                        <button className="buy-btn secondary" onClick={handleAddToCart} style={{ marginBottom: '10px', background: '#fff', color: '#333', border: '1px solid #ccc' }}>
                             <ShoppingCart size={20} />
-                            Comprar
+                            Adicionar ao Carrinho
+                        </button>
+                        <button className="buy-btn primary" onClick={handleBuyNow}>
+                            <CreditCard size={20} />
+                            Comprar Agora
                         </button>
                     </div>
                 </div>
