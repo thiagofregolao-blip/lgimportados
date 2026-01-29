@@ -146,24 +146,19 @@ export function useAISearch(): UseAISearchResult {
                 }
             }
 
+            // Mostrar produtos imediatamente se houver
+            if (productsReceived.length > 0) {
+                setProducts(productsReceived);
+            }
+
             // Efeito de typing - mostrar texto caractere por caractere
             if (fullTextReceived) {
                 accumulatedText = fullTextReceived;
-                const typingSpeed = 15; // ms por caractere (ajuste conforme necessário)
+                const typingSpeed = 12; // ms por caractere
 
                 for (let i = 0; i <= fullTextReceived.length; i++) {
                     await new Promise(resolve => setTimeout(resolve, typingSpeed));
                     setStreaming(fullTextReceived.slice(0, i));
-
-                    // Se tiver produtos, mostrar após 30% do texto
-                    if (productsReceived.length > 0 && i === Math.floor(fullTextReceived.length * 0.3)) {
-                        setProducts(productsReceived);
-                    }
-                }
-
-                // Garantir que produtos apareçam no final
-                if (productsReceived.length > 0) {
-                    setProducts(productsReceived);
                 }
             }
         } catch (error: any) {
