@@ -303,9 +303,9 @@ export function Hero() {
                                                         ≈ R$ {product.priceBRL.toFixed(0)}
                                                     </span>
                                                 </div>
-                                                {product.discount && (
-                                                    <span className="ai-product-discount">
-                                                        -{product.discount}% vs Brasil
+                                                {(product.discount || 0) > 0 && (
+                                                    <span className="discount-badge">
+                                                        -{product.discount}%
                                                     </span>
                                                 )}
                                             </div>

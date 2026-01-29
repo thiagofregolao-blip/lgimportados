@@ -84,8 +84,8 @@ export function ProductCard({ product }: ProductCardProps) {
                             loading="lazy"
                         />
 
-                        {product.discount && (
-                            <span className="product-badge">-{product.discount}%</span>
+                        {(product.discount || 0) > 0 && (
+                            <span className="discount-badge">-{product.discount}%</span>
                         )}
 
                         {product.isNew && (

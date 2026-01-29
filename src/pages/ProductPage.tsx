@@ -122,7 +122,7 @@ export function ProductPage() {
                         <div className="product-page-gallery">
                             <div className="product-page-main-image">
                                 <img src={product.image} alt={product.name} />
-                                {product.discount && (
+                                {(product.discount || 0) > 0 && (
                                     <span className="product-page-badge discount">-{product.discount}%</span>
                                 )}
                                 {product.isNew && (

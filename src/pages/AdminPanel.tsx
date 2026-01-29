@@ -548,7 +548,7 @@ function ProductsTab() {
                     <div key={product.id} className={`admin-product-row ${!product.active ? 'inactive' : ''}`}>
                         <div className="col-image">
                             <img src={product.image || 'https://via.placeholder.com/50'} alt={product.name} />
-                            {product.discount && <span className="discount-badge-mini">-{product.discount}%</span>}
+                            {(product.discount || 0) > 0 && <span className="discount-badge-mini">-{product.discount}%</span>}
                         </div>
                         <div className="col-name">
                             <span className="product-name">{product.name}</span>

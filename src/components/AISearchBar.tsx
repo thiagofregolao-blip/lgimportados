@@ -190,7 +190,7 @@ export function AISearchBar({ onProductClick }: AISearchBarProps) {
                                                         ≈ R$ {product.priceBRL.toFixed(0)}
                                                     </span>
                                                 </div>
-                                                {product.discount && (
+                                                {(product.discount || 0) > 0 && (
                                                     <span className="ai-product-discount">
                                                         -{product.discount}% vs Brasil
                                                     </span>
