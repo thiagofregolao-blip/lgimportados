@@ -8,6 +8,7 @@ import { analyticsRoutes } from './routes/analytics.js';
 import { pricesRoutes } from './routes/prices.js';
 import { productsRoutes } from './routes/products.js';
 import { initializeDatabase } from './initDb.js';
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -53,9 +54,44 @@ app.use('/api/assistant', assistantRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/prices', pricesRoutes);
 app.use('/api/products', productsRoutes);
-app.use('/api/monitors', monitorRoutes); // <--- Adicionada
+app.use('/api/monitors', monitorRoutes);
 
-// ...
+// ============================================
+// HEALTH CHECK
+// ============================================
+app.get('/api/health', (req, res) => {
+    res.json({
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'development',
+        database: process.env.DATABASE_URL ? 'configured' : 'missing',
+    });
+});
+
+// ============================================
+// SERVIR FRONTEND ESTÁTICO (Produção)
+// ============================================
+// O servidor roda de dist/server/, então dist/ está um nível acima
+const distPath = path.join(__dirname, '..');
+const indexPath = path.join(distPath, 'index.html');
+
+console.log('🔍 Verificando arquivos estáticos em:', distPath);
+
+if (fs.existsSync(indexPath)) {
+    console.log('✅ Frontend build encontrado! Servindo arquivos estáticos.');
+
+    // Servir arquivos estáticos da pasta dist
+    app.use(express.static(distPath));
+
+    // SPA fallback - qualquer rota não-API vai para o index.html
+    app.get('*', (req, res) => {
+        if (!req.path.startsWith('/api')) {
+            res.sendFile(indexPath);
+        }
+    });
+} else {
+    console.log('⚠️ Frontend build NÃO encontrado em:', indexPath);
+}
 
 // ============================================
 // START SERVER
