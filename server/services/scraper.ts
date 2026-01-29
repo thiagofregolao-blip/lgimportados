@@ -5,7 +5,7 @@ import { priceMonitors, products } from '../schema.js';
 import { eq } from 'drizzle-orm';
 
 // Configuração
-const SCRAPE_DO_TOKEN = process.env.SCRAPE_DO_TOKEN;
+const SCRAPE_DO_TOKEN = process.env.SCRAPE_DO_TOKEN || process.env.SCRAPEDO_API_KEY;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
