@@ -20,7 +20,7 @@ export function Header() {
     };
 
     return (
-        <header className="header" style={{ position: 'relative', zIndex: 50 }}>
+        <header className="header">
             <div className="container header-container">
                 <a href="/" className="header-logo">
                     <img src="/logo.png" alt="LG Importados" className="header-logo-image" />
