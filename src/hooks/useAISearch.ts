@@ -66,7 +66,7 @@ export function useAISearch(): UseAISearchResult {
         // Adicionar mensagem do usuário
         setMessages(prev => [...prev, { type: 'user', text: messageToSend }]);
         setQuery('');
-        setProducts([]);
+        // Não limpar produtos aqui - manter os anteriores até novos chegarem
         setIsTyping(true);
         setStreaming('');
 
