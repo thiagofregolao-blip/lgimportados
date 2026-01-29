@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { db } from '../db.js';
-import { products, priceCache } from '../schema.js';
-import { eq, gte } from 'drizzle-orm';
+import { products } from '../schema.js';
+import { eq } from 'drizzle-orm';
 
 export const pricesRoutes = Router();
 
@@ -36,23 +36,37 @@ async function getCurrentExchangeRate(): Promise<number> {
 }
 
 // ============================================
-// MARGENS POR CATEGORIA
+// MARGENS DE ECONOMIA POR CATEGORIA (Tabela Base)
+// % que o produto é mais barato no Paraguai
 // ============================================
 const CATEGORY_MARGINS: Record<string, { min: number; max: number }> = {
-    'perfumes': { min: 0.40, max: 0.60 },
+    'tabacaria': { min: 0.50, max: 0.70 }, // Maior economia
+    'perfumes': { min: 0.40, max: 0.60 },  // Alta economia
     'cosmeticos': { min: 0.35, max: 0.55 },
+    'bebidas': { min: 0.30, max: 0.55 },
+    'notebooks': { min: 0.25, max: 0.40 }, // Informática
+    'games': { min: 0.25, max: 0.40 },
     'celulares': { min: 0.25, max: 0.35 },
     'smartphones': { min: 0.25, max: 0.35 },
-    'notebooks': { min: 0.30, max: 0.45 },
-    'games': { min: 0.25, max: 0.40 },
+    'eletronicos': { min: 0.20, max: 0.35 }, // TVs
+    'tv': { min: 0.20, max: 0.35 },
     'audio': { min: 0.20, max: 0.35 },
-    'smartwatch': { min: 0.25, max: 0.40 },
-    'default': { min: 0.20, max: 0.35 },
+    'automotivo': { min: 0.20, max: 0.35 },
+    'casa': { min: 0.15, max: 0.30 },
+    'default': { min: 0.20, max: 0.30 },   // Padrão conservador
 };
 
 function getMarginForCategory(category?: string | null): { min: number; max: number } {
     if (!category) return CATEGORY_MARGINS['default'];
-    const key = category.toLowerCase();
+    // Tratamento para mapear categorias do banco para as chaves acima
+    const key = category.toLowerCase().trim();
+
+    if (key.includes('iphone') || key.includes('celular')) return CATEGORY_MARGINS['celulares'];
+    if (key.includes('game') || key.includes('console') || key.includes('jogos')) return CATEGORY_MARGINS['games'];
+    if (key.includes('notebook') || key.includes('laptop') || key.includes('pc')) return CATEGORY_MARGINS['notebooks'];
+    if (key.includes('perfume')) return CATEGORY_MARGINS['perfumes'];
+    if (key.includes('som') || key.includes('audio') || key.includes('jbl')) return CATEGORY_MARGINS['audio'];
+
     return CATEGORY_MARGINS[key] || CATEGORY_MARGINS['default'];
 }
 
@@ -61,6 +75,9 @@ function getMarginForCategory(category?: string | null): { min: number; max: num
 // ============================================
 pricesRoutes.post('/compare', async (req, res) => {
     try {
+        // SIMULAR DELAY DE BUSCA (UX)
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
         const { productId } = req.body;
 
         if (!productId) {
@@ -95,8 +112,11 @@ pricesRoutes.post('/compare', async (req, res) => {
         // 4. Se não tiver, estimar com base na categoria
         if (!brazilPrice) {
             const margin = getMarginForCategory(product.category);
-            const randomMargin = margin.min + Math.random() * (margin.max - margin.min);
-            brazilPrice = paraguayPriceBRL * (1 + randomMargin);
+            const randomSavings = margin.min + Math.random() * (margin.max - margin.min);
+
+            // Fórmula: Preço Brasil = Preço PY / (1 - %Economia)
+            // Ex: Se economia é 25% (0.25), BR = PY / 0.75
+            brazilPrice = paraguayPriceBRL / (1 - randomSavings);
         }
 
         // 5. Calcular economia
