@@ -1,20 +1,14 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
+import { useNavigate } from "react-router-dom";
 import { useStore } from "../store/store";
 import { TopBar } from "../components/TopBar";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
 import { Loader2, CreditCard, QrCode, Lock, CheckCircle, ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 
-export default function CheckoutPage() {
-    const [, setLocation] = useLocation();
-    const { cart, cartTotal, clearCart } = useStore();
+export function CheckoutPage() {
+    const navigate = useNavigate();
+    const { cart, clearCart } = useStore();
     const [step, setStep] = useState(1); // 1: Identificação, 2: Pagamento, 3: Sucesso
     const [loading, setLoading] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState("pix");
@@ -33,9 +27,9 @@ export default function CheckoutPage() {
     // Redirecionar se carrinho vazio (apenas se não estiver no sucesso)
     useEffect(() => {
         if (cart.length === 0 && step !== 3) {
-            setLocation("/");
+            navigate("/");
         }
-    }, [cart, step, setLocation]);
+    }, [cart, step, navigate]);
 
     const totalUSD = cart.reduce((acc, item) => acc + (item.priceUSD * item.quantity), 0);
     const totalBRL = totalUSD * EXCHANGE_RATE;
@@ -62,15 +56,12 @@ export default function CheckoutPage() {
         // Simulação de processamento
         await new Promise(resolve => setTimeout(resolve, 2000));
 
-        // Aqui enviaria para o backend...
-
         setLoading(false);
         setStep(3);
         clearCart();
     };
 
     const handleWhatsAppRedirect = () => {
-        // Mensagem formatada para o WhatsApp após "sucesso" (MVP)
         const itemsList = cart.map(i => `📦 ${i.quantity}x ${i.name}`).join('\n');
         const methodDict: { [key: string]: string } = { pix: 'Pix (Imediato)', card: 'Cartão de Crédito' };
 
@@ -89,25 +80,35 @@ export default function CheckoutPage() {
 
     if (step === 3) {
         return (
-            <div className="min-h-screen flex flex-col bg-gray-50">
+            <div className="app">
                 <TopBar />
                 <Header />
-                <main className="flex-grow container mx-auto px-4 py-12 flex flex-col items-center justify-center text-center">
-                    <div className="bg-white p-8 rounded-2xl shadow-lg max-w-md w-full">
-                        <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                            <CheckCircle className="w-10 h-10 text-green-600" />
+                <main className="main-content" style={{ padding: '4rem 1rem', textAlign: 'center' }}>
+                    <div style={{ maxWidth: '480px', margin: '0 auto', background: 'white', padding: '2rem', borderRadius: '1rem', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                        <div style={{ width: '80px', height: '80px', background: '#DCFCE7', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem auto' }}>
+                            <CheckCircle size={40} color="#16A34A" />
                         </div>
-                        <h1 className="text-2xl font-bold text-gray-900 mb-2">Pedido Realizado!</h1>
-                        <p className="text-gray-600 mb-6">
-                            Seu pedido foi registrado com sucesso. Para confirmar o pagamento e agilizar o envio, envie o comprovante no nosso WhatsApp.
+                        <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>Pedido Realizado!</h1>
+                        <p style={{ color: '#666', marginBottom: '2rem' }}>
+                            Seu pedido foi registrado com sucesso. Para confirmar o pagamento e agilizar o envio, clique abaixo.
                         </p>
-                        <div className="space-y-4">
-                            <Button onClick={handleWhatsAppRedirect} className="w-full bg-green-600 hover:bg-green-700 text-white h-12 text-lg">
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            <button
+                                onClick={handleWhatsAppRedirect}
+                                style={{
+                                    background: '#16A34A', color: 'white', padding: '1rem', borderRadius: '0.5rem', fontWeight: 'bold', border: 'none', cursor: 'pointer', fontSize: '1rem'
+                                }}
+                            >
                                 Enviar Comprovante no WhatsApp
-                            </Button>
-                            <Button variant="outline" onClick={() => setLocation("/")} className="w-full">
+                            </button>
+                            <button
+                                onClick={() => navigate("/")}
+                                style={{
+                                    background: 'transparent', color: '#666', padding: '1rem', borderRadius: '0.5rem', border: '1px solid #ccc', cursor: 'pointer'
+                                }}
+                            >
                                 Voltar para a Loja
-                            </Button>
+                            </button>
                         </div>
                     </div>
                 </main>
@@ -117,156 +118,202 @@ export default function CheckoutPage() {
     }
 
     return (
-        <div className="min-h-screen flex flex-col bg-gray-50">
+        <div className="app">
             <TopBar />
             <Header />
 
-            <main className="flex-grow container mx-auto px-4 py-8">
-                <div className="max-w-4xl mx-auto">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-8 flex items-center gap-3">
-                        <Lock className="w-6 h-6 text-green-600" />
-                        Finalizar Compra
-                    </h1>
+            <main className="main-content">
+                <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '2rem 1rem', display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: '2rem' }}>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {/* Coluna Esquerda: Formulário */}
-                        <div className="md:col-span-2 space-y-6">
+                    {/* Coluna Esquerda: Formulário e Pagamento */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
-                            {/* Passo 1: Identificação */}
-                            <Card className={step !== 1 ? "opacity-60 pointer-events-none" : ""}>
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2">
-                                        <span className="bg-primary text-white w-8 h-8 rounded-full flex items-center justify-center text-sm">1</span>
-                                        Identificação
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="name">Nome Completo</Label>
-                                            <Input id="name" placeholder="Ex: João Silva" value={formData.name} onChange={handleInputChange} />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="cpf">CPF (Opcional)</Label>
-                                            <Input id="cpf" placeholder="000.000.000-00" value={formData.cpf} onChange={handleInputChange} />
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="email">Email</Label>
-                                            <Input id="email" type="email" placeholder="joao@email.com" value={formData.email} onChange={handleInputChange} />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="phone">Celular / WhatsApp *</Label>
-                                            <Input id="phone" placeholder="(11) 99999-9999" value={formData.phone} onChange={handleInputChange} />
-                                        </div>
-                                    </div>
-                                    {step === 1 && (
-                                        <Button className="w-full mt-4" onClick={handleNextStep}>
-                                            Continuar para Pagamento <ArrowRight className="ml-2 w-4 h-4" />
-                                        </Button>
-                                    )}
-                                </CardContent>
-                            </Card>
+                        <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <Lock size={24} color="#16A34A" />
+                            Finalizar Compra
+                        </h1>
 
-                            {/* Passo 2: Pagamento */}
-                            <Card className={step !== 2 ? "opacity-60 pointer-events-none" : ""}>
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2">
-                                        <span className="bg-primary text-white w-8 h-8 rounded-full flex items-center justify-center text-sm">2</span>
-                                        Pagamento
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <RadioGroupItem value="pix" id="pix" className="peer sr-only" />
-                                            <Label htmlFor="pix" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer">
-                                                <QrCode className="mb-3 h-6 w-6" />
-                                                <span className="font-semibold">Pix (Imediato)</span>
-                                                <span className="text-xs text-green-600 mt-1">-5% de Desconto</span>
-                                            </Label>
-                                        </div>
-                                        <div>
-                                            <RadioGroupItem value="card" id="card" className="peer sr-only" />
-                                            <Label htmlFor="card" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer">
-                                                <CreditCard className="mb-3 h-6 w-6" />
-                                                <span className="font-semibold">Cartão de Crédito</span>
-                                                <span className="text-xs text-gray-500 mt-1">Até 12x c/ juros</span>
-                                            </Label>
-                                        </div>
-                                    </RadioGroup>
-
-                                    {step === 2 && paymentMethod === 'card' && (
-                                        <div className="mt-6 p-4 bg-yellow-50 text-yellow-800 rounded-md text-sm">
-                                            ⚠️ No momento, pagamentos via cartão são processados presencialmente ou via link seguro enviado no WhatsApp.
-                                        </div>
-                                    )}
-                                </CardContent>
-                            </Card>
-
+                        {/* Passo 1: Identificação */}
+                        <div style={{ background: 'white', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid #eee', opacity: step !== 1 ? 0.6 : 1, pointerEvents: step !== 1 ? 'none' : 'auto' }}>
+                            <h2 style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '1rem', display: 'flex', items: 'center', gap: '0.5rem' }}>
+                                <span style={{ background: '#333', color: 'white', width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem' }}>1</span>
+                                Identificação
+                            </h2>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                    <label htmlFor="name" style={{ fontSize: '0.9rem', fontWeight: '500' }}>Nome Completo</label>
+                                    <input
+                                        id="name"
+                                        placeholder="Ex: Thiago Silva"
+                                        value={formData.name}
+                                        onChange={handleInputChange}
+                                        style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '0.25rem' }}
+                                    />
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                    <label htmlFor="phone" style={{ fontSize: '0.9rem', fontWeight: '500' }}>Celular / WhatsApp *</label>
+                                    <input
+                                        id="phone"
+                                        placeholder="(11) 99999-9999"
+                                        value={formData.phone}
+                                        onChange={handleInputChange}
+                                        style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '0.25rem' }}
+                                    />
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                    <label htmlFor="email" style={{ fontSize: '0.9rem', fontWeight: '500' }}>Email</label>
+                                    <input
+                                        id="email"
+                                        type="email"
+                                        placeholder="email@exemplo.com"
+                                        value={formData.email}
+                                        onChange={handleInputChange}
+                                        style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '0.25rem' }}
+                                    />
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                    <label htmlFor="cpf" style={{ fontSize: '0.9rem', fontWeight: '500' }}>CPF</label>
+                                    <input
+                                        id="cpf"
+                                        placeholder="000.000.000-00"
+                                        value={formData.cpf}
+                                        onChange={handleInputChange}
+                                        style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '0.25rem' }}
+                                    />
+                                </div>
+                            </div>
+                            {step === 1 && (
+                                <button
+                                    onClick={handleNextStep}
+                                    style={{ marginTop: '1rem', width: '100%', background: '#333', color: 'white', padding: '0.75rem', borderRadius: '0.25rem', fontWeight: 'bold', cursor: 'pointer' }}
+                                >
+                                    Continuar para Pagamento
+                                </button>
+                            )}
                         </div>
 
-                        {/* Coluna Direita: Resumo */}
-                        <div className="md:col-span-1">
-                            <Card className="sticky top-24 shadow-lg border-2 border-primary/10">
-                                <CardHeader className="bg-gray-50/50 pb-4">
-                                    <CardTitle>Resumo do Pedido</CardTitle>
-                                </CardHeader>
-                                <CardContent className="pt-6 space-y-4">
-                                    {cart.map((item) => (
-                                        <div key={item.id} className="flex gap-4 text-sm">
-                                            <div className="w-12 h-12 bg-gray-100 rounded-md overflow-hidden flex-shrink-0">
-                                                <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-                                            </div>
-                                            <div className="flex-1">
-                                                <p className="font-medium line-clamp-2">{item.name}</p>
-                                                <p className="text-gray-500">{item.quantity}x US$ {item.priceUSD}</p>
-                                            </div>
-                                            <div className="font-semibold">
-                                                US$ {item.priceUSD * item.quantity}
-                                            </div>
-                                        </div>
-                                    ))}
+                        {/* Passo 2: Pagamento */}
+                        <div style={{ background: 'white', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid #eee', opacity: step !== 2 ? 0.6 : 1, pointerEvents: step !== 2 ? 'none' : 'auto' }}>
+                            <h2 style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '1rem', display: 'flex', items: 'center', gap: '0.5rem' }}>
+                                <span style={{ background: '#333', color: 'white', width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem' }}>2</span>
+                                Pagamento
+                            </h2>
 
-                                    <Separator />
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                <div
+                                    onClick={() => setPaymentMethod('pix')}
+                                    style={{
+                                        border: `2px solid ${paymentMethod === 'pix' ? '#16A34A' : '#eee'}`,
+                                        borderRadius: '0.5rem',
+                                        padding: '1rem',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                        background: paymentMethod === 'pix' ? '#DCFCE7' : 'white'
+                                    }}
+                                >
+                                    <QrCode size={24} />
+                                    <span style={{ fontWeight: 'bold' }}>Pix</span>
+                                    <span style={{ fontSize: '0.75rem', color: '#16A34A' }}>-5% de Desconto</span>
+                                </div>
 
-                                    <div className="space-y-2">
-                                        <div className="flex justify-between text-gray-600">
-                                            <span>Subtotal (USD)</span>
-                                            <span>US$ {totalUSD.toFixed(2)}</span>
+                                <div
+                                    onClick={() => setPaymentMethod('card')}
+                                    style={{
+                                        border: `2px solid ${paymentMethod === 'card' ? '#16A34A' : '#eee'}`,
+                                        borderRadius: '0.5rem',
+                                        padding: '1rem',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                        background: paymentMethod === 'card' ? '#DCFCE7' : 'white'
+                                    }}
+                                >
+                                    <CreditCard size={24} />
+                                    <span style={{ fontWeight: 'bold' }}>Cartão</span>
+                                    <span style={{ fontSize: '0.75rem', color: '#666' }}>Até 12x</span>
+                                </div>
+                            </div>
+
+                            {step === 2 && paymentMethod === 'card' && (
+                                <div style={{ marginTop: '1rem', padding: '0.75rem', background: '#FEF9C3', color: '#854D0E', borderRadius: '0.25rem', fontSize: '0.875rem' }}>
+                                    ⚠️ Pagamentos via cartão serão processados via link seguro enviado no WhatsApp.
+                                </div>
+                            )}
+                        </div>
+
+                    </div>
+
+                    {/* Coluna Direita: Resumo */}
+                    <div>
+                        <div style={{ background: 'white', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid #ddd', position: 'sticky', top: '100px' }}>
+                            <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold', marginBottom: '1rem' }}>Resumo do Pedido</h3>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1rem' }}>
+                                {cart.map((item) => (
+                                    <div key={item.id} style={{ display: 'flex', gap: '0.75rem', fontSize: '0.9rem' }}>
+                                        <img src={item.image} alt={item.name} style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '4px' }} />
+                                        <div style={{ flex: 1 }}>
+                                            <p style={{ margin: 0, fontWeight: '500', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{item.name}</p>
+                                            <p style={{ margin: 0, color: '#666', fontSize: '0.8rem' }}>{item.quantity}x US$ {item.priceUSD}</p>
                                         </div>
-                                        <div className="flex justify-between text-gray-600">
-                                            <span>Cotação Hoje</span>
-                                            <span>R$ {EXCHANGE_RATE.toFixed(2)}</span>
-                                        </div>
-                                        <Separator />
-                                        <div className="flex justify-between text-lg font-bold text-primary">
-                                            <span>Total (BRL)</span>
-                                            <span>R$ {totalBRL.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                                        </div>
-                                        <p className="text-xs text-center text-gray-500 mt-2">
-                                            Pagamento em Reais via Pix ou Cartão Nacional.
-                                        </p>
                                     </div>
-                                </CardContent>
-                                <CardFooter>
-                                    {step === 2 && (
-                                        <Button
-                                            className="w-full h-12 text-lg font-bold shadow-md hover:shadow-xl transition-all"
-                                            onClick={handleFinishOrder}
-                                            disabled={loading}
-                                        >
-                                            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : `Pagar R$ ${totalBRL.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`}
-                                        </Button>
-                                    )}
-                                </CardFooter>
-                            </Card>
+                                ))}
+                            </div>
+
+                            <hr style={{ border: 'none', borderTop: '1px solid #eee', margin: '1rem 0' }} />
+
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.9rem', color: '#666' }}>
+                                <span>Subtotal (USD)</span>
+                                <span>US$ {totalUSD.toFixed(2)}</span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', fontSize: '0.9rem', color: '#666' }}>
+                                <span>Cotação</span>
+                                <span>R$ {EXCHANGE_RATE.toFixed(2)}</span>
+                            </div>
+
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', fontSize: '1.25rem', fontWeight: 'bold', color: '#16A34A' }}>
+                                <span>Total (BRL)</span>
+                                <span>R$ {totalBRL.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                            </div>
+
+                            {step === 2 && (
+                                <button
+                                    onClick={handleFinishOrder}
+                                    disabled={loading}
+                                    style={{
+                                        width: '100%',
+                                        background: '#E60014',
+                                        color: 'white',
+                                        padding: '1rem',
+                                        borderRadius: '0.5rem',
+                                        fontWeight: 'bold',
+                                        fontSize: '1.1rem',
+                                        border: 'none',
+                                        cursor: loading ? 'not-allowed' : 'pointer',
+                                        opacity: loading ? 0.7 : 1
+                                    }}
+                                >
+                                    {loading ? <Loader2 className="animate-spin mx-auto" /> : `Pagar R$ ${totalBRL.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`}
+                                </button>
+                            )}
+
+                            <p style={{ textAlign: 'center', fontSize: '0.75rem', color: '#999', marginTop: '1rem' }}>
+                                Pagamento seguro via Pix ou Cartão.
+                            </p>
                         </div>
                     </div>
+
                 </div>
             </main>
             <Footer />
         </div>
     );
 }
+
+// Export default para manter compatibilidade com lazy loading se houver, ou imports diretos
+export default CheckoutPage;
