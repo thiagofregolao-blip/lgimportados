@@ -13,7 +13,23 @@ import { ProductPage } from './pages/ProductPage';
 import { QuickProductPage } from './pages/QuickProductPage';
 import { CheckoutPage } from './pages/Checkout';
 
-// ... (rest of imports)
+// Home Page Component
+function HomePage() {
+    return (
+        <div className="app">
+            <TopBar />
+            <Header />
+            <main className="main-content">
+                <Hero />
+                <Categories />
+                <ProductGrid title="🔥 Ofertas do Dia" limit={4} />
+                <PriceCompare />
+                <ProductGrid title="Todos os Produtos" showAll={true} />
+            </main>
+            <Footer />
+        </div>
+    );
+}
 
 // Main App with Routes
 function App() {
