@@ -427,53 +427,10 @@ assistantRoutes.post('/analyze-image', async (req: Request, res: Response) => {
             return res.status(400).json({ success: false, message: 'Imagem não fornecida' });
         }
 
-        // Usar Gemini se disponível (mais barato para visão)
-        if (process.env.GEMINI_API_KEY) {
-            const { GoogleGenerativeAI } = await import('@google/generative-ai');
-            const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-            // Usando modelo padrão estável
-            const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-
-            const prompt = `Analise esta imagem de produto e retorne APENAS um JSON válido (sem markdown) com:
-{
-  "name": "Nome completo do produto (ex: 'iPhone 15 Pro Max 256GB')",
-  "category": "Categoria (ex: 'celulares', 'perfumes', 'games')",
-  "brand": "Marca se identificável",
-  "description": "Descrição atrativa em português para vendas (2-3 frases)",
-  "suggestedPriceUSD": { "min": 0, "max": 0 },
-  "confidence": 0.0
-}`;
-
-            const base64Data = imageBase64.includes(',')
-                ? imageBase64.split(',')[1]
-                : imageBase64;
-
-            const result = await model.generateContent([
-                prompt,
-                {
-                    inlineData: {
-                        mimeType: 'image/jpeg',
-                        data: base64Data,
-                    },
-                },
-            ]);
-
-            const responseText = result.response.text();
-            let cleanJson = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-            const jsonMatch = cleanJson.match(/\{[\s\S]*\}/);
-            if (jsonMatch) {
-                cleanJson = jsonMatch[0];
-            }
-
-            const analysis = JSON.parse(cleanJson);
-            console.log('✅ Produto identificado:', analysis.name);
-
-            return res.json({ success: true, analysis });
-        }
-
-        // Fallback: OpenAI Vision
+        // Prioridade: OpenAI Vision (conforme solicitado)
         const openaiClient = getOpenAI();
         if (openaiClient) {
+            console.log('👁️ Analisando imagem com OpenAI Vision (GPT-4o)...');
             const response = await openaiClient.chat.completions.create({
                 model: 'gpt-4o',
                 messages: [
@@ -509,9 +466,51 @@ assistantRoutes.post('/analyze-image', async (req: Request, res: Response) => {
             return res.json({ success: true, analysis });
         }
 
+        // Fallback: Gemini se OpenAI não estiver configurada
+        if (process.env.GEMINI_API_KEY) {
+            console.log('⚠️ OpenAI não configurada. Usando fallback para Gemini Vision...');
+            const { GoogleGenerativeAI } = await import('@google/generative-ai');
+            const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+            const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+            const prompt = `Analise esta imagem de produto e retorne APENAS um JSON válido (sem markdown) com:
+{
+  "name": "Nome completo do produto (ex: 'iPhone 15 Pro Max 256GB')",
+  "category": "Categoria (ex: 'celulares', 'perfumes', 'games')",
+  "brand": "Marca se identificável",
+  "description": "Descrição atrativa em português para vendas (2-3 frases)",
+  "suggestedPriceUSD": { "min": 0, "max": 0 },
+  "confidence": 0.0
+}`;
+
+            const base64Data = imageBase64.includes(',')
+                ? imageBase64.split(',')[1]
+                : imageBase64;
+
+            const result = await model.generateContent([
+                prompt,
+                {
+                    inlineData: {
+                        mimeType: 'image/jpeg',
+                        data: base64Data,
+                    },
+                },
+            ]);
+
+            const responseText = result.response.text();
+            let cleanJson = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+            const jsonMatch = cleanJson.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                cleanJson = jsonMatch[0];
+            }
+
+            const analysis = JSON.parse(cleanJson);
+            return res.json({ success: true, analysis });
+        }
+
         return res.status(500).json({
             success: false,
-            message: 'Nenhuma API de visão configurada (GEMINI_API_KEY ou OPENAI_API_KEY)'
+            message: 'Nenhuma API de visão configurada (OPENAI_API_KEY ou GEMINI_API_KEY)'
         });
 
     } catch (error: any) {
