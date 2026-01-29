@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { AdminMonitorPage } from './AdminMonitorPage';
 import {
     LayoutDashboard,
     Image,
@@ -16,7 +17,8 @@ import {
     X,
     Megaphone,
     Sparkles,
-    Menu
+    Menu,
+    LineChart
 } from 'lucide-react';
 import { useStore, Banner, Product, Category } from '../store/store';
 
@@ -62,7 +64,7 @@ const compressImage = (file: File): Promise<string> => {
     });
 };
 
-type Tab = 'dashboard' | 'banners' | 'products' | 'categories' | 'topbar' | 'settings';
+type Tab = 'dashboard' | 'banners' | 'products' | 'categories' | 'topbar' | 'settings' | 'monitors';
 
 export function AdminPanel() {
     const [activeTab, setActiveTab] = useState<Tab>('dashboard');
@@ -100,6 +102,13 @@ export function AdminPanel() {
                     >
                         <LayoutDashboard size={20} />
                         <span>Dashboard</span>
+                    </button>
+                    <button
+                        className={`admin-nav-item ${activeTab === 'monitors' ? 'active' : ''}`}
+                        onClick={() => { setActiveTab('monitors'); closeMenu(); }}
+                    >
+                        <LineChart size={20} />
+                        <span>Monitoramento</span>
                     </button>
                     <button
                         className={`admin-nav-item ${activeTab === 'banners' ? 'active' : ''}`}
@@ -154,6 +163,7 @@ export function AdminPanel() {
                 {activeTab === 'categories' && <CategoriesTab />}
                 {activeTab === 'topbar' && <TopBarTab />}
                 {activeTab === 'settings' && <SettingsTab />}
+                {activeTab === 'monitors' && <AdminMonitorPage />}
             </main>
         </div>
     );
