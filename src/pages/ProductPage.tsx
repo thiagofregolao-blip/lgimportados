@@ -77,37 +77,22 @@ export function ProductPage() {
     const handleBuyNow = () => {
         if (!product) return;
         addToCart(product, quantity);
-        // Simulação de checkout via WhatsApp ( MVP )
-        // Em breve podemos substituir por um checkout real
-        setIsCartModalOpen(true);
-    };
+        const handleGoToCheckout = () => {
+            if (!product) return;
+            const message = encodeURIComponent(
+                `*Novo Pedido Iniciado!* 🛒\n\n` +
+                `Gostaria de finalizar a compra de:\n` +
+                `📦 *${product.name}*\n` +
+                `💵 Preço Unitário: US$ ${product.priceUSD}\n` +
+                `📊 Quantidade: ${quantity}\n` +
+                `💰 *Total: US$ ${(product.priceUSD * quantity).toLocaleString('pt-BR')}*\n` +
+                `📍 Loja: ${product.store || 'LG Importados'}`
+            );
+            window.open(`https://wa.me/5545999999999?text=${message}`, '_blank');
+            setIsCartModalOpen(false);
+        };
 
-    // ... (rest of code)
-
-    return (
-        // ...
-        <div className="buy-actions">
-            <button className="buy-btn secondary" onClick={handleAddToCart} style={{ marginBottom: '10px', background: '#fff', color: '#333', border: '1px solid #ccc' }}>
-                <ShoppingCart size={20} />
-                Adicionar ao Carrinho
-            </button>
-            <button className="buy-btn primary" onClick={handleBuyNow}>
-                <CreditCard size={20} /> {/* Changed icon to CreditCard for Buy Now */}
-                Comprar Agora
-            </button>
-        </div>
-                    </div >
-                </div >
-            </main >
-        if (!product) return;
-    const message = encodeURIComponent(
-        `*Novo Pedido Iniciado!* 🛒\n\n` +
-        `Gostaria de finalizar a compra de:\n` +
-        `📦 *${product.name}*\n` +
-        `💵 Preço Unitário: US$ ${product.priceUSD}\n` +
-        `📊 Quantidade: ${quantity}\n` +
-        `💰 *Total: US$ ${(product.priceUSD * quantity).toLocaleString('pt-BR')}*\n` +
-        `📍 Loja: ${product.store || 'LG Importados'}`
+        if (!product) {
     );
     window.open(`https://wa.me/5545999999999?text=${message}`, '_blank');
     setIsCartModalOpen(false);
