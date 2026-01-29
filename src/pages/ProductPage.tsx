@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Heart, ShoppingCart, ArrowLeftRight, X, Loader2, TrendingDown, Store, Plus, Minus, Share2, Check } from 'lucide-react';
+import { ArrowLeft, Heart, ShoppingCart, ArrowLeftRight, X, Loader2, TrendingDown, Store, Plus, Minus, Share2, Check, CreditCard, Truck } from 'lucide-react';
 import { useStore, Product } from '../store/store';
 import { TopBar } from '../components/TopBar';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
+import { CartModal } from '../components/CartModal';
 
 interface ComparisonData {
     productName: string;
@@ -16,13 +17,14 @@ interface ComparisonData {
 
 export function ProductPage() {
     const { id } = useParams<{ id: string }>();
-    const { products } = useStore();
+    const { products, topBar, addToCart } = useStore();
     const [product, setProduct] = useState<Product | null>(null);
     const [quantity, setQuantity] = useState(1);
     const [showComparison, setShowComparison] = useState(false);
     const [loading, setLoading] = useState(false);
     const [comparisonData, setComparisonData] = useState<ComparisonData | null>(null);
-    const [addedToCart, setAddedToCart] = useState(false);
+    const [isCartModalOpen, setIsCartModalOpen] = useState(false);
+    const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
     // Scroll para o topo quando a página carrega
     useEffect(() => {
@@ -68,23 +70,31 @@ export function ProductPage() {
 
     const handleAddToCart = () => {
         if (!product) return;
-
-        // Adicionar ao carrinho (simulado - você pode implementar store de carrinho)
-        setAddedToCart(true);
-        setTimeout(() => setAddedToCart(false), 2000);
+        addToCart(product, quantity);
+        setIsCartModalOpen(true);
     };
 
     const handleBuyNow = () => {
         if (!product) return;
-        // Redirecionar para WhatsApp ou checkout
+        addToCart(product, quantity);
+        // Simular ida para checkout direto (por enquanto abre o modal também, ou poderia ir para outra página)
+        // Para este MVP, vamos abrir o modal de sucesso que tem a opção de "Ir para Pagamento"
+        setIsCartModalOpen(true);
+    };
+
+    const handleGoToCheckout = () => {
+        if (!product) return;
         const message = encodeURIComponent(
-            `Olá! Quero comprar:\n\n` +
-            `📦 ${product.name}\n` +
-            `💵 ${formatCurrency(product.priceUSD, 'USD')}\n` +
-            `📊 Quantidade: ${quantity}\n\n` +
-            `Total: ${formatCurrency(product.priceUSD * quantity, 'USD')}`
+            `*Novo Pedido Iniciado!* 🛒\n\n` +
+            `Gostaria de finalizar a compra de:\n` +
+            `📦 *${product.name}*\n` +
+            `💵 Preço Unitário: US$ ${product.priceUSD}\n` +
+            `📊 Quantidade: ${quantity}\n` +
+            `💰 *Total: US$ ${(product.priceUSD * quantity).toLocaleString('pt-BR')}*\n` +
+            `📍 Loja: ${product.store || 'LG Importados'}`
         );
-        window.open(`https://wa.me/5511999999999?text=${message}`, '_blank');
+        window.open(`https://wa.me/5545999999999?text=${message}`, '_blank');
+        setIsCartModalOpen(false);
     };
 
     if (!product) {
@@ -103,120 +113,142 @@ export function ProductPage() {
         );
     }
 
+    // Mock images for gallery (using the main image multiple times if no gallery structure exists yet)
+    const images = [product.image, product.image, product.image, product.image];
+
     return (
         <div className="app">
             <TopBar />
             <Header />
             <main className="main-content">
-                <div className="product-page">
-                    {/* Breadcrumb */}
-                    <nav className="product-page-breadcrumb">
-                        <Link to="/" className="breadcrumb-link">
-                            <ArrowLeft size={18} />
-                            Voltar para Home
-                        </Link>
-                    </nav>
+                <div className="product-page-container">
 
-                    <div className="product-page-content">
-                        {/* Galeria de Imagens */}
-                        <div className="product-page-gallery">
-                            <div className="product-page-main-image">
-                                <img src={product.image} alt={product.name} />
-                                {(product.discount || 0) > 0 && (
-                                    <span className="product-page-badge discount">-{product.discount}%</span>
-                                )}
-                                {product.isNew && (
-                                    <span className="product-page-badge new">Novo</span>
-                                )}
+                    {/* Coluna 1: Galeria de Imagens */}
+                    <div className="product-gallery">
+                        <div className="product-main-image">
+                            <img src={images[selectedImageIndex]} alt={product.name} />
+                            {(product.discount || 0) > 0 && (
+                                <span className="product-badge discount">-{product.discount}%</span>
+                            )}
+                        </div>
+                        <div className="product-thumbnails">
+                            {images.map((img, idx) => (
+                                <div
+                                    key={idx}
+                                    className={`product-thumb ${selectedImageIndex === idx ? 'active' : ''}`}
+                                    onClick={() => setSelectedImageIndex(idx)}
+                                >
+                                    <img src={img} alt={`Thumb ${idx}`} />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Coluna 2: Detalhes do Produto */}
+                    <div className="product-details">
+                        <div className="product-page-header">
+                            <span className="product-page-category">{product.category}</span>
+                            <div className="product-rating">
+                                ★★★★★ <span>(4.8)</span>
                             </div>
                         </div>
 
-                        {/* Informações do Produto */}
-                        <div className="product-page-info">
-                            <div className="product-page-header">
-                                <span className="product-page-category">{product.category}</span>
-                                <button className="product-page-favorite">
-                                    <Heart size={22} />
-                                </button>
+                        <h1>{product.name}</h1>
+
+                        <p className="product-page-store">
+                            <Store size={16} />
+                            Vendido e entregue por <strong>{product.store || 'LG Importados'}</strong>
+                        </p>
+
+                        <p className="product-description-short">
+                            {product.description || `O ${product.name} oferece desempenho excepcional e design moderno. Ideal para quem busca tecnologia de ponta com o melhor custo-benefício do mercado paraguaio.`}
+                            <br />
+                            <span className="product-more-info-link">mais informações</span>
+                        </p>
+
+                        <div className="product-variants">
+                            <div className="variant-section">
+                                <p className="variant-label">Cor: Padrão</p>
+                                <div className="variant-options">
+                                    <div className="variant-option selected">
+                                        <div className="variant-name">Padrão</div>
+                                    </div>
+                                </div>
                             </div>
+                        </div>
 
-                            <h1 className="product-page-title">{product.name}</h1>
+                        <button className="product-page-compare-btn" onClick={handleCompare}>
+                            <ArrowLeftRight size={18} />
+                            Ver Comparativo de Preços (Brasil vs Paraguai)
+                        </button>
+                    </div>
 
-                            <p className="product-page-store">
-                                <Store size={16} />
-                                Vendido por <strong>{product.store || 'LG Importados'}</strong>
+                    {/* Coluna 3: Buy Box */}
+                    <div className="product-buy-box">
+                        <div className="price-block">
+                            {(product.discount || 0) > 0 && (
+                                <div className="price-original">
+                                    {formatCurrency(product.priceUSD * 1.2, 'USD')}
+                                </div>
+                            )}
+                            <div className="price-current">
+                                {formatCurrency(product.priceUSD, 'USD')}
+                            </div>
+                            <div className="price-pix">
+                                ≈ {formatCurrency(product.priceBRL, 'BRL')} no Pix
+                            </div>
+                        </div>
+
+                        <div className="payment-info">
+                            <CreditCard size={16} />
+                            <span>Em até 12x no cartão (consulte taxas)</span>
+                        </div>
+
+                        <div className="shipping-calc">
+                            <p className="shipping-title">
+                                <Truck size={16} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '5px' }} />
+                                Calcular frete e prazo
                             </p>
-
-                            {/* Preços */}
-                            <div className="product-page-prices">
-                                <div className="product-page-price-usd">
-                                    {formatCurrency(product.priceUSD, 'USD')}
-                                </div>
-                                <div className="product-page-price-brl">
-                                    ≈ {formatCurrency(product.priceBRL, 'BRL')}
-                                </div>
-                                {product.discount && (
-                                    <span className="product-page-discount-badge">
-                                        Economia de {product.discount}% vs Brasil
-                                    </span>
-                                )}
+                            <div className="shipping-input-group">
+                                <input type="text" placeholder="Digite seu CEP" className="shipping-input" />
+                                <button className="shipping-btn">OK</button>
                             </div>
+                        </div>
 
-                            {/* Botão Comparar Preço */}
-                            <button className="product-page-compare-btn" onClick={handleCompare}>
-                                <ArrowLeftRight size={18} />
-                                Comparar com Preços do Brasil
-                            </button>
-
-                            {/* Quantidade */}
-                            <div className="product-page-quantity">
-                                <span>Quantidade:</span>
-                                <div className="quantity-controls">
-                                    <button onClick={() => setQuantity(Math.max(1, quantity - 1))}>
-                                        <Minus size={16} />
-                                    </button>
-                                    <span>{quantity}</span>
-                                    <button onClick={() => setQuantity(quantity + 1)}>
-                                        <Plus size={16} />
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Botões de Ação */}
-                            <div className="product-page-actions">
-                                <button
-                                    className={`product-page-add-cart ${addedToCart ? 'added' : ''}`}
-                                    onClick={handleAddToCart}
-                                >
-                                    {addedToCart ? (
-                                        <>
-                                            <Check size={20} />
-                                            Adicionado!
-                                        </>
-                                    ) : (
-                                        <>
-                                            <ShoppingCart size={20} />
-                                            Adicionar ao Carrinho
-                                        </>
-                                    )}
+                        <div className="quantity-buy-box">
+                            <span className="qty-label">Quantidade:</span>
+                            <div className="quantity-controls">
+                                <button onClick={() => setQuantity(Math.max(1, quantity - 1))}>
+                                    <Minus size={16} />
                                 </button>
-                                <button className="product-page-buy-now" onClick={handleBuyNow}>
-                                    Comprar Agora
+                                <span>{quantity}</span>
+                                <button onClick={() => setQuantity(quantity + 1)}>
+                                    <Plus size={16} />
                                 </button>
                             </div>
+                        </div>
 
-                            {/* Compartilhar */}
-                            <button className="product-page-share">
-                                <Share2 size={16} />
-                                Compartilhar
+                        <div className="buy-actions">
+                            <button className="buy-btn primary" onClick={handleBuyNow}>
+                                <ShoppingCart size={20} />
+                                Comprar
                             </button>
                         </div>
                     </div>
+
                 </div>
             </main>
             <Footer />
 
-            {/* Modal de Comparação */}
+            <CartModal
+                isOpen={isCartModalOpen}
+                onClose={() => setIsCartModalOpen(false)}
+                onGoToCheckout={handleGoToCheckout}
+                product={product}
+                quantity={quantity}
+            />
+
+            {/* Modal de Comparação (Mantido) */}
             {showComparison && (
                 <div className="price-comparison-overlay" onClick={() => setShowComparison(false)}>
                     <div className="price-comparison-modal" onClick={(e) => e.stopPropagation()}>

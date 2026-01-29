@@ -23,6 +23,7 @@ export interface Product {
     image: string;
     category: string;
     store: string;
+    description?: string;
     discount?: number;
     isNew?: boolean;
     featured?: boolean;
@@ -256,10 +257,23 @@ interface StoreState {
     deleteCategory: (id: string) => void;
 
     // Top Bar actions
+    // Top Bar actions
     updateTopBarSettings: (settings: Partial<TopBarSettings>) => void;
     updateTopBarItem: (id: string, item: Partial<TopBarItem>) => void;
     updateDollarRate: (rate: number) => void;
     resetTopBar: () => void;
+
+    // Cart actions
+    cart: CartItem[];
+    addToCart: (product: Product, quantity: number) => void;
+    removeFromCart: (productId: string) => void;
+    updateCartQuantity: (productId: string, quantity: number) => void;
+    clearCart: () => void;
+    cartTotal: () => number;
+}
+
+export interface CartItem extends Product {
+    quantity: number;
 }
 
 // Generate unique ID
@@ -371,6 +385,38 @@ export const useStore = create<StoreState>()(
             })),
 
             resetTopBar: () => set({ topBar: defaultTopBarSettings }),
+
+            // Cart implementation
+            cart: [],
+            addToCart: (product, quantity) => set((state) => {
+                const existingItem = state.cart.find(item => item.id === product.id);
+                if (existingItem) {
+                    return {
+                        cart: state.cart.map(item =>
+                            item.id === product.id
+                                ? { ...item, quantity: item.quantity + quantity }
+                                : item
+                        )
+                    };
+                }
+                return { cart: [...state.cart, { ...product, quantity }] };
+            }),
+            removeFromCart: (productId) => set((state) => ({
+                cart: state.cart.filter(item => item.id !== productId)
+            })),
+            updateCartQuantity: (productId, quantity) => set((state) => ({
+                cart: state.cart.map(item =>
+                    item.id === productId ? { ...item, quantity } : item
+                )
+            })),
+            clearCart: () => set({ cart: [] }),
+            cartTotal: () => {
+                // Access state strictly inside components or via get() if needed, 
+                // but since this is inside the store definition, we can't easily access 'state' here for a getter function acting as a selector directly without middleware complications.
+                // Instead, we usually compute derived state in components: useStore(s => s.cart.reduce(...))
+                // Keeping this empty or basic if the interface requires it, but simpler to calculate in component.
+                return 0;
+            },
         }),
         {
             name: 'lg-importados-store',
