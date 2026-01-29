@@ -14,7 +14,8 @@ import {
     GripVertical,
     Save,
     X,
-    Megaphone // New icon for Top Bar
+    Megaphone,
+    Sparkles
 } from 'lucide-react';
 import { useStore, Banner, Product, Category } from '../store/store';
 
@@ -532,6 +533,10 @@ function ProductsTab() {
                     <Plus size={20} />
                     Novo Produto
                 </button>
+                <a href="/admin/quick-product" className="admin-btn secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
+                    <Sparkles size={20} />
+                    Cadastro com IA
+                </a>
             </div>
 
             {/* Lista de Produtos em Tabela */}

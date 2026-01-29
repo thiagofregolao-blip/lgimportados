@@ -10,6 +10,7 @@ import { PriceCompare } from './components/PriceCompare';
 import { Footer } from './components/Footer';
 import { AdminPanel } from './pages/AdminPanel';
 import { ProductPage } from './pages/ProductPage';
+import { QuickProductPage } from './pages/QuickProductPage';
 import './styles/admin.css';
 
 // Home Page Component
@@ -44,6 +45,7 @@ function App() {
             <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/admin" element={<AdminPanel />} />
+                <Route path="/admin/quick-product" element={<QuickProductPage />} />
                 <Route path="/produto/:id" element={<ProductPage />} />
             </Routes>
         </BrowserRouter>
