@@ -256,9 +256,14 @@ ${emoji} ${statusText}
 
                                 <div>
                                     {m.status === 'error' ? (
-                                        <span title={m.failureReason || ''} style={{ color: '#DC2626', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                            <AlertTriangle size={14} /> Erro
-                                        </span>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                            <span style={{ color: '#DC2626', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 'bold' }}>
+                                                <AlertTriangle size={14} /> Erro
+                                            </span>
+                                            <span style={{ fontSize: '0.75rem', color: '#EF4444', maxWidth: '150px' }}>
+                                                {m.failureReason || 'Erro desconhecido'}
+                                            </span>
+                                        </div>
                                     ) : (
                                         <span style={{ color: '#16A34A', display: 'flex', alignItems: 'center', gap: '4px' }}>
                                             <CheckCircle size={14} /> Ativo
