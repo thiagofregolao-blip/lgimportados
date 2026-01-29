@@ -23,6 +23,10 @@ function getOpenAI() {
 }
 
 export async function checkCompetitorPrice(url: string): Promise<ScrapeResult> {
+    if (!url.startsWith('http')) {
+        url = 'https://' + url;
+    }
+
     if (!SCRAPE_DO_TOKEN) {
         return { error: 'SCRAPE_DO_TOKEN não configurado no servidor.' };
     }
