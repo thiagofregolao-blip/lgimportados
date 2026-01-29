@@ -1,4 +1,4 @@
-import { ShoppingCart, X, Check, ArrowRight } from 'lucide-react';
+import { ShoppingCart, X, Check } from 'lucide-react';
 import { Product } from '../store/store';
 
 interface CartModalProps {

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Heart, ShoppingCart, ArrowLeftRight, X, Loader2, TrendingDown, Store, Plus, Minus, Share2, Check, CreditCard, Truck } from 'lucide-react';
+import { useParams } from 'react-router-dom';
+import { ShoppingCart, ArrowLeftRight, X, Loader2, TrendingDown, Store, Plus, Minus, CreditCard, Truck } from 'lucide-react';
 import { useStore, Product } from '../store/store';
 import { TopBar } from '../components/TopBar';
 import { Header } from '../components/Header';
@@ -17,7 +17,7 @@ interface ComparisonData {
 
 export function ProductPage() {
     const { id } = useParams<{ id: string }>();
-    const { products, topBar, addToCart } = useStore();
+    const { products, addToCart } = useStore();
     const [product, setProduct] = useState<Product | null>(null);
     const [quantity, setQuantity] = useState(1);
     const [showComparison, setShowComparison] = useState(false);
@@ -66,12 +66,6 @@ export function ProductPage() {
         } finally {
             setLoading(false);
         }
-    };
-
-    const handleAddToCart = () => {
-        if (!product) return;
-        addToCart(product, quantity);
-        setIsCartModalOpen(true);
     };
 
     const handleBuyNow = () => {
