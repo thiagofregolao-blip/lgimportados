@@ -573,7 +573,7 @@
 /* Mobile Responsive */
 @media (max-width: 768px) {
     .admin-mobile-toggle {
-        display: flex;
+        display: flex !important;
         align-items: center;
         justify-content: center;
     }
