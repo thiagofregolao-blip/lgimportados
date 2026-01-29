@@ -135,7 +135,7 @@ export function CheckoutPage() {
 
                         {/* Passo 1: Identificação */}
                         <div style={{ background: 'white', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid #eee', opacity: step !== 1 ? 0.6 : 1, pointerEvents: step !== 1 ? 'none' : 'auto' }}>
-                            <h2 style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '1rem', display: 'flex', items: 'center', gap: '0.5rem' }}>
+                            <h2 style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                 <span style={{ background: '#333', color: 'white', width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem' }}>1</span>
                                 Identificação
                             </h2>
@@ -185,16 +185,16 @@ export function CheckoutPage() {
                             {step === 1 && (
                                 <button
                                     onClick={handleNextStep}
-                                    style={{ marginTop: '1rem', width: '100%', background: '#333', color: 'white', padding: '0.75rem', borderRadius: '0.25rem', fontWeight: 'bold', cursor: 'pointer' }}
+                                    style={{ marginTop: '1rem', width: '100%', background: '#333', color: 'white', padding: '0.75rem', borderRadius: '0.25rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
                                 >
-                                    Continuar para Pagamento
+                                    Continuar para Pagamento <ArrowRight size={16} />
                                 </button>
                             )}
                         </div>
 
                         {/* Passo 2: Pagamento */}
                         <div style={{ background: 'white', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid #eee', opacity: step !== 2 ? 0.6 : 1, pointerEvents: step !== 2 ? 'none' : 'auto' }}>
-                            <h2 style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '1rem', display: 'flex', items: 'center', gap: '0.5rem' }}>
+                            <h2 style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                 <span style={{ background: '#333', color: 'white', width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem' }}>2</span>
                                 Pagamento
                             </h2>
