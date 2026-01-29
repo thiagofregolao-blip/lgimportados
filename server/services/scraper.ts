@@ -33,8 +33,8 @@ export async function checkCompetitorPrice(url: string): Promise<ScrapeResult> {
 
     try {
         // 1. Obter HTML via Scrape.do
-        // Usa render=true para sites com muito JS (opcional, gasta mais créditos, vou deixar sem por enquanto ou configurável)
-        const targetUrl = `http://api.scrape.do?token=${SCRAPE_DO_TOKEN}&url=${encodeURIComponent(url)}`;
+        // Usa render=true para garantir que SPAs/Sites complexos carreguem o preço
+        const targetUrl = `http://api.scrape.do?token=${SCRAPE_DO_TOKEN}&url=${encodeURIComponent(url)}&render=true`;
 
         console.log(`🔍 Scraping URL: ${url}`);
         const response = await fetch(targetUrl);
@@ -49,12 +49,18 @@ export async function checkCompetitorPrice(url: string): Promise<ScrapeResult> {
             throw new Error('HTML retornado vazio ou inválido.');
         }
 
-        console.log(`📄 HTML obtido (${html.length} chars). Analisando com IA...`);
+        // 2. Pré-processamento Inteligente
+        // Remove scripts, styles e comentários ANTES de cortar, para aproveitar melhor o limite de tokens
+        let cleanHtml = html
+            .replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gim, "")
+            .replace(/<style\b[^>]*>([\s\S]*?)<\/style>/gim, "")
+            .replace(/<!--[\s\S]*?-->/g, "")
+            .replace(/\s+/g, " "); // Minimiza espaços em branco
 
-        // 2. Extrair preço usando IA (OpenAI ou Gemini)
-        // Cortar o HTML para não estourar tokens (pegar <body e um pedaço razoável)
-        // Muitos sites modernas colocam dados no <head> (meta tags, json-ld). Vou pegar os primeiros 15000 caracters e garantir que meta tags estejam lá.
-        const cleanHtml = html.substring(0, 50000).replace(/<script[^>]*>([\S\s]*?)<\/script>/gmi, ""); // Remove scripts para economizar tokens
+        // Cortar para evitar estouro de limite, mas agora com conteúdo útil
+        cleanHtml = cleanHtml.substring(0, 100000);
+
+        console.log(`📄 HTML limpo (${cleanHtml.length} chars). Analisando com IA...`);
 
         const aiResult = await extractPriceWithAI(cleanHtml);
         return aiResult;
