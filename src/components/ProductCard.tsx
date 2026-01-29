@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Heart, ArrowLeftRight, X, Loader2, TrendingDown, Store } from 'lucide-react';
 import { Product } from '../store/store';
 
@@ -40,7 +41,9 @@ export function ProductCard({ product }: ProductCardProps) {
         return `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
     };
 
-    const handleCompare = async () => {
+    const handleCompare = async (e: React.MouseEvent) => {
+        e.preventDefault(); // Evita navegação
+        e.stopPropagation();
         setShowComparison(true);
         setLoading(true);
         setError(null);
@@ -71,50 +74,53 @@ export function ProductCard({ product }: ProductCardProps) {
 
     return (
         <>
-            <article className="product-card animate-fade-in">
-                <div className="product-image-wrapper">
-                    <img
-                        src={product.image}
-                        alt={product.name}
-                        className="product-image"
-                        loading="lazy"
-                    />
+            <Link to={`/produto/${product.id}`} className="product-card-link">
+                <article className="product-card animate-fade-in">
+                    <div className="product-image-wrapper">
+                        <img
+                            src={product.image}
+                            alt={product.name}
+                            className="product-image"
+                            loading="lazy"
+                        />
 
-                    {product.discount && (
-                        <span className="product-badge">-{product.discount}%</span>
-                    )}
+                        {product.discount && (
+                            <span className="product-badge">-{product.discount}%</span>
+                        )}
 
-                    {product.isNew && (
-                        <span className="product-badge new">Novo</span>
-                    )}
+                        {product.isNew && (
+                            <span className="product-badge new">Novo</span>
+                        )}
 
-                    <button
-                        className="product-favorite"
-                        aria-label="Adicionar aos favoritos"
-                    >
-                        <Heart size={18} />
-                    </button>
-                </div>
-
-                <div className="product-info">
-                    <h3 className="product-name">{product.name}</h3>
-                    <p className="product-store">{product.store}</p>
-
-                    <div className="product-prices">
-                        <span className="product-price-usd">
-                            {formatCurrency(product.priceUSD, 'USD')}
-                        </span>
-                        <span className="product-price-brl">
-                            ≈ {formatCurrency(product.priceBRL, 'BRL')}
-                        </span>
+                        <button
+                            className="product-favorite"
+                            aria-label="Adicionar aos favoritos"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <Heart size={18} />
+                        </button>
                     </div>
 
-                    <button className="product-compare-btn" onClick={handleCompare}>
-                        <ArrowLeftRight size={16} />
-                        Comparar com Brasil
-                    </button>
-                </div>
-            </article>
+                    <div className="product-info">
+                        <h3 className="product-name">{product.name}</h3>
+                        <p className="product-store">{product.store}</p>
+
+                        <div className="product-prices">
+                            <span className="product-price-usd">
+                                {formatCurrency(product.priceUSD, 'USD')}
+                            </span>
+                            <span className="product-price-brl">
+                                ≈ {formatCurrency(product.priceBRL, 'BRL')}
+                            </span>
+                        </div>
+
+                        <button className="product-compare-btn" onClick={handleCompare}>
+                            <ArrowLeftRight size={16} />
+                            Comparar com Brasil
+                        </button>
+                    </div>
+                </article>
+            </Link>
 
             {/* Modal de Comparação */}
             {showComparison && (
