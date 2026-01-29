@@ -12,6 +12,7 @@ import { AdminPanel } from './pages/AdminPanel';
 import { ProductPage } from './pages/ProductPage';
 import { QuickProductPage } from './pages/QuickProductPage';
 import { CheckoutPage } from './pages/Checkout';
+import { CartPage } from './pages/CartPage';
 
 // Home Page Component
 function HomePage() {
@@ -47,6 +48,7 @@ function App() {
                 <Route path="/admin" element={<AdminPanel />} />
                 <Route path="/admin/quick-product" element={<QuickProductPage />} />
                 <Route path="/produto/:id" element={<ProductPage />} />
+                <Route path="/carrinho" element={<CartPage />} />
                 <Route path="/checkout" element={<CheckoutPage />} />
             </Routes>
         </BrowserRouter>

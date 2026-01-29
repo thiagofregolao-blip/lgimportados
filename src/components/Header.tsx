@@ -21,7 +21,7 @@ export function Header() {
                     <button
                         className="header-action-btn"
                         aria-label="Carrinho"
-                        onClick={() => navigate('/checkout')}
+                        onClick={() => navigate('/carrinho')}
                     >
                         <ShoppingCart size={22} />
                         {cartCount > 0 && <span className="badge">{cartCount}</span>}
