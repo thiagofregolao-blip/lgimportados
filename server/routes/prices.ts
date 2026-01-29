@@ -67,8 +67,16 @@ pricesRoutes.post('/compare', async (req, res) => {
             return res.status(400).json({ success: false, message: 'productId é obrigatório' });
         }
 
+        // Validar que é um número válido
+        const numericId = parseInt(String(productId), 10);
+        if (isNaN(numericId)) {
+            return res.status(400).json({ success: false, message: 'productId inválido' });
+        }
+
+        console.log(`🔍 Buscando produto ID: ${numericId}`);
+
         // 1. Buscar produto
-        const [product] = await db.select().from(products).where(eq(products.id, Number(productId)));
+        const [product] = await db.select().from(products).where(eq(products.id, numericId));
 
         if (!product) {
             return res.status(404).json({ success: false, message: 'Produto não encontrado' });
