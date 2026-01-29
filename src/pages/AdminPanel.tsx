@@ -15,7 +15,8 @@ import {
     Save,
     X,
     Megaphone,
-    Sparkles
+    Sparkles,
+    Menu
 } from 'lucide-react';
 import { useStore, Banner, Product, Category } from '../store/store';
 
@@ -65,57 +66,72 @@ type Tab = 'dashboard' | 'banners' | 'products' | 'categories' | 'topbar' | 'set
 
 export function AdminPanel() {
     const [activeTab, setActiveTab] = useState<Tab>('dashboard');
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+    const toggleMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
+    const closeMenu = () => setIsMobileMenuOpen(false);
 
     return (
         <div className="admin-panel">
+            {/* Mobile Menu Toggle */}
+            <button className="admin-mobile-toggle" onClick={toggleMenu}>
+                <Menu size={24} />
+            </button>
+
+            {/* SidebarOverlay */}
+            {isMobileMenuOpen && <div className="admin-sidebar-overlay" onClick={closeMenu} />}
+
             {/* Sidebar */}
-            <aside className="admin-sidebar">
+            <aside className={`admin-sidebar ${isMobileMenuOpen ? 'open' : ''}`}>
                 <div className="admin-sidebar-header">
                     <a href="/" className="admin-logo">
                         <div className="admin-logo-icon">LG</div>
                         <span>Admin Panel</span>
                     </a>
+                    <button className="admin-mobile-close" onClick={closeMenu}>
+                        <X size={20} />
+                    </button>
                 </div>
 
                 <nav className="admin-nav">
                     <button
                         className={`admin-nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('dashboard')}
+                        onClick={() => { setActiveTab('dashboard'); closeMenu(); }}
                     >
                         <LayoutDashboard size={20} />
                         <span>Dashboard</span>
                     </button>
                     <button
                         className={`admin-nav-item ${activeTab === 'banners' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('banners')}
+                        onClick={() => { setActiveTab('banners'); closeMenu(); }}
                     >
                         <Image size={20} />
                         <span>Banners</span>
                     </button>
                     <button
                         className={`admin-nav-item ${activeTab === 'products' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('products')}
+                        onClick={() => { setActiveTab('products'); closeMenu(); }}
                     >
                         <Package size={20} />
                         <span>Produtos</span>
                     </button>
                     <button
                         className={`admin-nav-item ${activeTab === 'categories' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('categories')}
+                        onClick={() => { setActiveTab('categories'); closeMenu(); }}
                     >
                         <FolderOpen size={20} />
                         <span>Categorias</span>
                     </button>
                     <button
                         className={`admin-nav-item ${activeTab === 'topbar' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('topbar')}
+                        onClick={() => { setActiveTab('topbar'); closeMenu(); }}
                     >
                         <Megaphone size={20} />
                         <span>Barra Superior</span>
                     </button>
                     <button
                         className={`admin-nav-item ${activeTab === 'settings' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('settings')}
+                        onClick={() => { setActiveTab('settings'); closeMenu(); }}
                     >
                         <Settings size={20} />
                         <span>Configurações</span>
