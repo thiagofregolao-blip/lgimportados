@@ -83,6 +83,35 @@ export async function initializeDatabase() {
         `);
         console.log('✅ Table ai_search_analytics ready');
 
+        // Criar tabela price_monitors se não existir
+        await db.execute(sql`
+            CREATE TABLE IF NOT EXISTS price_monitors (
+                id SERIAL PRIMARY KEY,
+                product_id INTEGER NOT NULL,
+                url TEXT NOT NULL,
+                site_name VARCHAR(100),
+                last_price DECIMAL(10, 2),
+                last_price_currency VARCHAR(10) DEFAULT 'USD',
+                last_checked_at TIMESTAMP,
+                status VARCHAR(20) DEFAULT 'active',
+                failure_reason TEXT,
+                created_at TIMESTAMP DEFAULT NOW()
+            )
+        `);
+        console.log('✅ Table price_monitors ready');
+
+        // Criar tabela monitor_settings se não existir
+        await db.execute(sql`
+            CREATE TABLE IF NOT EXISTS monitor_settings (
+                id SERIAL PRIMARY KEY,
+                check_interval_minutes INTEGER DEFAULT 60,
+                is_active BOOLEAN DEFAULT TRUE,
+                last_run_at TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT NOW()
+            )
+        `);
+        console.log('✅ Table monitor_settings ready');
+
         console.log('✅ All database tables initialized successfully!');
     } catch (error: any) {
         console.error('❌ Database initialization error:', error.message);
