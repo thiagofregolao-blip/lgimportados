@@ -129,6 +129,30 @@ export const assistantMessages = pgTable('assistant_messages', {
 });
 
 // ============================================
+// MONITORAMENTO DE PREÇOS
+// ============================================
+export const priceMonitors = pgTable('price_monitors', {
+    id: serial('id').primaryKey(),
+    productId: integer('product_id').notNull(), // Vínculo lógico com products.id (sem FK rígida para facilitar)
+    url: text('url').notNull(),
+    siteName: varchar('site_name', { length: 100 }), // Ex: Cellshop, Nissei
+    lastPrice: decimal('last_price', { precision: 10, scale: 2 }), // Preço encontrado
+    lastPriceCurrency: varchar('last_price_currency', { length: 10 }).default('USD'), // USD ou BRL
+    lastCheckedAt: timestamp('last_checked_at'),
+    status: varchar('status', { length: 20 }).default('active'), // active, error, paused
+    failureReason: text('failure_reason'),
+    createdAt: timestamp('created_at').defaultNow(),
+});
+
+export const monitorSettings = pgTable('monitor_settings', {
+    id: serial('id').primaryKey(),
+    checkIntervalMinutes: integer('check_interval_minutes').default(60), // 30, 60, 120, etc.
+    isActive: boolean('is_active').default(true),
+    lastRunAt: timestamp('last_run_at'),
+    updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+// ============================================
 // TIPOS EXPORTADOS
 // ============================================
 export type Product = typeof products.$inferSelect;
@@ -137,3 +161,6 @@ export type Category = typeof categories.$inferSelect;
 export type Banner = typeof banners.$inferSelect;
 export type AISearchAnalytic = typeof aiSearchAnalytics.$inferSelect;
 export type AIInsight = typeof aiInsights.$inferSelect;
+export type PriceMonitor = typeof priceMonitors.$inferSelect;
+export type NewPriceMonitor = typeof priceMonitors.$inferInsert;
+export type MonitorSetting = typeof monitorSettings.$inferSelect;

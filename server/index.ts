@@ -41,51 +41,21 @@ app.use('/api', (req, res, next) => {
 // ============================================
 // ROTAS DE API
 // ============================================
+import { monitorRoutes } from './routes/monitor.js';
+import { startPriceMonitorScheduler } from './scheduler.js';
+
+// ... (imports anteriores mantidos se outside block)
+
+// ============================================
+// ROTAS DE API
+// ============================================
 app.use('/api/assistant', assistantRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/prices', pricesRoutes);
 app.use('/api/products', productsRoutes);
+app.use('/api/monitors', monitorRoutes); // <--- Adicionada
 
-// ============================================
-// HEALTH CHECK
-// ============================================
-app.get('/api/health', (req, res) => {
-    res.json({
-        status: 'ok',
-        timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || 'development',
-        database: process.env.DATABASE_URL ? 'configured' : 'missing',
-    });
-});
-
-// ============================================
-// SERVIR FRONTEND ESTÁTICO (Produção)
-// ============================================
-if (process.env.NODE_ENV === 'production') {
-    // O servidor roda de dist/server/, então dist/ está um nível acima
-    const distPath = path.join(__dirname, '..');
-
-    // Servir arquivos estáticos da pasta dist
-    app.use(express.static(distPath));
-
-    // SPA fallback - qualquer rota não-API vai para o index.html
-    app.get('*', (req, res) => {
-        if (!req.path.startsWith('/api')) {
-            res.sendFile(path.join(distPath, 'index.html'));
-        }
-    });
-}
-
-// ============================================
-// ERROR HANDLER
-// ============================================
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-    console.error('❌ Error:', err);
-    res.status(500).json({
-        success: false,
-        message: err.message || 'Internal server error',
-    });
-});
+// ...
 
 // ============================================
 // START SERVER
@@ -104,6 +74,7 @@ app.listen(PORT, async () => {
     // Inicializar tabelas do banco de dados
     if (process.env.DATABASE_URL) {
         await initializeDatabase();
+        startPriceMonitorScheduler(); // <--- Iniciado
     }
 });
 
