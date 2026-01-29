@@ -2605,3 +2605,244 @@ textarea {
     order: 3;
   }
 }
+
+/* ============================================ */
+/* MODAL DE COMPARAÇÃO DE PREÇOS               */
+/* ============================================ */
+
+.price-comparison-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  animation: fadeIn 0.2s ease;
+}
+
+.price-comparison-modal {
+  background: var(--white);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-2xl);
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  padding: var(--space-6);
+  animation: slideUp 0.3s ease;
+}
+
+.price-comparison-close {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  background: var(--gray-100);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  color: var(--gray-600);
+}
+
+.price-comparison-close:hover {
+  background: var(--gray-200);
+  color: var(--gray-900);
+}
+
+.price-comparison-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin-bottom: var(--space-4);
+}
+
+.price-comparison-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-8);
+  color: var(--gray-500);
+}
+
+.price-comparison-loading .spinner {
+  animation: spin 1s linear infinite;
+  color: var(--primary-500);
+}
+
+.price-comparison-error {
+  text-align: center;
+  padding: var(--space-6);
+  color: var(--error-600);
+}
+
+.price-comparison-error button {
+  margin-top: var(--space-4);
+  background: var(--primary-500);
+  color: var(--white);
+  border: none;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.price-comparison-error button:hover {
+  background: var(--primary-600);
+}
+
+.price-comparison-product-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--gray-700);
+  margin-bottom: var(--space-4);
+  text-align: center;
+}
+
+.price-comparison-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.price-comparison-card {
+  background: var(--gray-50);
+  border-radius: var(--radius-xl);
+  padding: var(--space-4);
+  border: 2px solid transparent;
+}
+
+.price-comparison-card.paraguay {
+  border-color: var(--success-500);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(16, 185, 129, 0.1) 100%);
+}
+
+.price-comparison-card.brazil {
+  border-color: var(--warning-500);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, rgba(245, 158, 11, 0.1) 100%);
+}
+
+.price-comparison-card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--gray-800);
+  margin-bottom: var(--space-3);
+}
+
+.price-comparison-card-header .flag {
+  font-size: 1.5rem;
+}
+
+.price-comparison-card-store {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: 0.85rem;
+  color: var(--gray-500);
+  margin-bottom: var(--space-2);
+}
+
+.price-comparison-card-price-usd {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--success-600);
+}
+
+.price-comparison-card-price-brl {
+  font-size: 0.9rem;
+  color: var(--gray-500);
+  margin-top: var(--space-1);
+}
+
+.price-comparison-brazil-store {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.price-comparison-brazil-store:last-child {
+  border-bottom: none;
+}
+
+.price-comparison-brazil-store .store-name {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: 0.85rem;
+  color: var(--gray-600);
+}
+
+.price-comparison-brazil-store .store-price {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--warning-700);
+}
+
+.price-comparison-brazil-store .store-price small {
+  font-size: 0.7rem;
+  color: var(--gray-400);
+  font-weight: 400;
+}
+
+.price-comparison-savings {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  background: linear-gradient(135deg, var(--success-500) 0%, var(--success-600) 100%);
+  color: var(--white);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-xl);
+  font-size: 1rem;
+  margin-bottom: var(--space-4);
+}
+
+.price-comparison-savings strong {
+  font-weight: 800;
+}
+
+.price-comparison-savings.brazil-cheaper {
+  background: linear-gradient(135deg, var(--warning-500) 0%, var(--warning-600) 100%);
+}
+
+.price-comparison-rate {
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--gray-400);
+}
+
+/* Mobile responsivo */
+@media (max-width: 600px) {
+  .price-comparison-modal {
+    padding: var(--space-4);
+  }
+
+  .price-comparison-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .price-comparison-title {
+    font-size: 1.2rem;
+  }
+}
