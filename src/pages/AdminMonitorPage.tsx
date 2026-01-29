@@ -322,13 +322,16 @@ ${emoji} ${statusText}
                                 </select>
                             </div>
                             <div className="form-group">
-                                <label>Link do Concorrente (URL)</label>
+                                <label>Link do PRODUTO no Concorrente (URL)</label>
                                 <input
                                     type="url"
-                                    placeholder="https://site-concorrente.com/produto-x"
+                                    placeholder="https://site-concorrente.com/produto-exemplo-abc"
                                     value={newMonitor.url}
                                     onChange={(e) => setNewMonitor({ ...newMonitor, url: e.target.value })}
                                 />
+                                <p style={{ fontSize: '11px', color: '#666', marginTop: '4px' }}>
+                                    Cole o link direto da página do produto. Não use a página inicial da loja.
+                                </p>
                             </div>
                             <div className="form-group">
                                 <label>Nome do Site (Opcional)</label>
