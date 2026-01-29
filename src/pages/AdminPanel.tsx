@@ -528,94 +528,151 @@ function ProductsTab() {
                     <h1 className="admin-title">Produtos</h1>
                     <p className="admin-subtitle">Gerencie o catálogo de produtos</p>
                 </div>
-                <button className="admin-btn primary" onClick={() => { setIsAdding(true); setIsEditing(null); }}>
+                <button className="admin-btn primary" onClick={() => { setIsAdding(true); setIsEditing(null); resetForm(); }}>
                     <Plus size={20} />
                     Novo Produto
                 </button>
             </div>
 
+            {/* Lista de Produtos em Tabela */}
+            <div className="admin-products-list">
+                <div className="admin-products-header">
+                    <span className="col-image">Imagem</span>
+                    <span className="col-name">Nome</span>
+                    <span className="col-price">Preço USD</span>
+                    <span className="col-category">Categoria</span>
+                    <span className="col-status">Status</span>
+                    <span className="col-actions">Ações</span>
+                </div>
+                {products.map((product) => (
+                    <div key={product.id} className={`admin-product-row ${!product.active ? 'inactive' : ''}`}>
+                        <div className="col-image">
+                            <img src={product.image || 'https://via.placeholder.com/50'} alt={product.name} />
+                            {product.discount && <span className="discount-badge-mini">-{product.discount}%</span>}
+                        </div>
+                        <div className="col-name">
+                            <span className="product-name">{product.name}</span>
+                            {product.isNew && <span className="new-tag">Novo</span>}
+                            {product.featured && <span className="featured-tag">★</span>}
+                        </div>
+                        <div className="col-price">
+                            <span className="price-usd">US$ {product.priceUSD.toLocaleString('pt-BR')}</span>
+                            <span className="price-brl">≈ R$ {product.priceBRL.toLocaleString('pt-BR')}</span>
+                        </div>
+                        <div className="col-category">
+                            {categories.find(c => c.id === product.category)?.name || product.category || '-'}
+                        </div>
+                        <div className="col-status">
+                            <span className={`status-badge ${product.active ? 'active' : 'inactive'}`}>
+                                {product.active ? 'Ativo' : 'Inativo'}
+                            </span>
+                        </div>
+                        <div className="col-actions">
+                            <button className="icon-btn" onClick={() => handleEdit(product)} title="Editar">
+                                <Edit2 size={16} />
+                            </button>
+                            <button className="icon-btn" onClick={() => updateProduct(product.id, { active: !product.active })} title={product.active ? 'Desativar' : 'Ativar'}>
+                                {product.active ? <EyeOff size={16} /> : <Eye size={16} />}
+                            </button>
+                            <button className="icon-btn danger" onClick={() => deleteProduct(product.id)} title="Excluir">
+                                <Trash2 size={16} />
+                            </button>
+                        </div>
+                    </div>
+                ))}
+                {products.length === 0 && (
+                    <div className="admin-empty">Nenhum produto cadastrado</div>
+                )}
+            </div>
+
+            {/* Modal de Edição/Criação */}
             {(isAdding || isEditing) && (
-                <div className="admin-form-card">
-                    <h3>{isEditing ? 'Editar Produto' : 'Adicionar Produto'}</h3>
-                    <div className="admin-form">
-                        <div className="form-row">
-                            <div className="form-group">
-                                <label>Nome do Produto</label>
-                                <input
-                                    type="text"
-                                    value={formData.name}
-                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    placeholder="iPhone 15 Pro Max 256GB"
-                                />
-                            </div>
-                            <div className="form-group">
-                                <label>Categoria</label>
-                                <select
-                                    value={formData.category}
-                                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                                >
-                                    <option value="">Selecione...</option>
-                                    {categories.map((cat) => (
-                                        <option key={cat.id} value={cat.id}>{cat.name}</option>
-                                    ))}
-                                </select>
-                            </div>
+                <div className="admin-modal-overlay" onClick={handleCancel}>
+                    <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="admin-modal-header">
+                            <h3>{isEditing ? 'Editar Produto' : 'Novo Produto'}</h3>
+                            <button className="admin-modal-close" onClick={handleCancel}>
+                                <X size={20} />
+                            </button>
                         </div>
+                        <div className="admin-modal-body">
+                            <div className="form-row">
+                                <div className="form-group">
+                                    <label>Nome do Produto</label>
+                                    <input
+                                        type="text"
+                                        value={formData.name}
+                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                        placeholder="iPhone 15 Pro Max 256GB"
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Categoria</label>
+                                    <select
+                                        value={formData.category}
+                                        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                                    >
+                                        <option value="">Selecione...</option>
+                                        {categories.map((cat) => (
+                                            <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
 
-                        <div className="form-row">
-                            <div className="form-group">
-                                <label>Preço USD</label>
-                                <input
-                                    type="number"
-                                    value={formData.priceUSD}
-                                    onChange={(e) => handleUSDChange(Number(e.target.value))}
-                                    placeholder="1199"
-                                />
+                            <div className="form-row">
+                                <div className="form-group">
+                                    <label>Preço USD</label>
+                                    <input
+                                        type="number"
+                                        value={formData.priceUSD}
+                                        onChange={(e) => handleUSDChange(Number(e.target.value))}
+                                        placeholder="1199"
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Preço BRL (calculado)</label>
+                                    <input
+                                        type="number"
+                                        value={formData.priceBRL}
+                                        onChange={(e) => setFormData({ ...formData, priceBRL: Number(e.target.value) })}
+                                        readOnly
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Preço Brasil (referência)</label>
+                                    <input
+                                        type="number"
+                                        value={formData.priceBrazil}
+                                        onChange={(e) => setFormData({ ...formData, priceBrazil: Number(e.target.value) })}
+                                        placeholder="9499"
+                                    />
+                                </div>
                             </div>
-                            <div className="form-group">
-                                <label>Preço BRL (calculado)</label>
-                                <input
-                                    type="number"
-                                    value={formData.priceBRL}
-                                    onChange={(e) => setFormData({ ...formData, priceBRL: Number(e.target.value) })}
-                                    placeholder="6954"
-                                />
-                            </div>
-                            <div className="form-group">
-                                <label>Preço Brasil</label>
-                                <input
-                                    type="number"
-                                    value={formData.priceBrazil}
-                                    onChange={(e) => setFormData({ ...formData, priceBrazil: Number(e.target.value) })}
-                                    placeholder="9499"
-                                />
-                            </div>
-                        </div>
 
-                        <div className="form-row">
-                            <div className="form-group">
-                                <label>URL da Imagem</label>
-                                <input
-                                    type="text"
-                                    value={formData.image}
-                                    onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                                    placeholder="https://exemplo.com/produto.jpg"
-                                />
+                            <div className="form-row">
+                                <div className="form-group">
+                                    <label>URL da Imagem</label>
+                                    <input
+                                        type="text"
+                                        value={formData.image}
+                                        onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                                        placeholder="https://..."
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Desconto (%)</label>
+                                    <input
+                                        type="number"
+                                        value={formData.discount}
+                                        onChange={(e) => setFormData({ ...formData, discount: Number(e.target.value) })}
+                                        placeholder="27"
+                                    />
+                                </div>
                             </div>
-                            <div className="form-group">
-                                <label>Desconto (%)</label>
-                                <input
-                                    type="number"
-                                    value={formData.discount}
-                                    onChange={(e) => setFormData({ ...formData, discount: Number(e.target.value) })}
-                                    placeholder="27"
-                                />
-                            </div>
-                        </div>
 
-                        <div className="form-row">
-                            <div className="form-group checkbox">
-                                <label>
+                            <div className="form-row checkboxes">
+                                <label className="checkbox-label">
                                     <input
                                         type="checkbox"
                                         checked={formData.isNew}
@@ -623,19 +680,15 @@ function ProductsTab() {
                                     />
                                     Produto Novo
                                 </label>
-                            </div>
-                            <div className="form-group checkbox">
-                                <label>
+                                <label className="checkbox-label">
                                     <input
                                         type="checkbox"
                                         checked={formData.featured || false}
                                         onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
                                     />
-                                    Destaque no Banner
+                                    Destaque
                                 </label>
-                            </div>
-                            <div className="form-group checkbox">
-                                <label>
+                                <label className="checkbox-label">
                                     <input
                                         type="checkbox"
                                         checked={formData.active}
@@ -645,10 +698,8 @@ function ProductsTab() {
                                 </label>
                             </div>
                         </div>
-
-                        <div className="form-actions">
+                        <div className="admin-modal-footer">
                             <button className="admin-btn secondary" onClick={handleCancel}>
-                                <X size={18} />
                                 Cancelar
                             </button>
                             <button className="admin-btn primary" onClick={handleSave}>
@@ -659,34 +710,6 @@ function ProductsTab() {
                     </div>
                 </div>
             )}
-
-            <div className="admin-grid">
-                {products.map((product) => (
-                    <div key={product.id} className={`admin-product-card ${!product.active ? 'inactive' : ''}`}>
-                        <div className="admin-product-image">
-                            <img src={product.image} alt={product.name} />
-                            {product.discount && <span className="discount-badge">-{product.discount}%</span>}
-                            {product.isNew && <span className="new-badge">Novo</span>}
-                        </div>
-                        <div className="admin-product-info">
-                            <h4>{product.name}</h4>
-                            <p className="price">US$ {product.priceUSD.toLocaleString('pt-BR')}</p>
-                            <p className="category">{categories.find(c => c.id === product.category)?.name || product.category}</p>
-                        </div>
-                        <div className="admin-product-actions">
-                            <button className="icon-btn" onClick={() => handleEdit(product)}>
-                                <Edit2 size={16} />
-                            </button>
-                            <button className="icon-btn" onClick={() => updateProduct(product.id, { active: !product.active })}>
-                                {product.active ? <EyeOff size={16} /> : <Eye size={16} />}
-                            </button>
-                            <button className="icon-btn danger" onClick={() => deleteProduct(product.id)}>
-                                <Trash2 size={16} />
-                            </button>
-                        </div>
-                    </div>
-                ))}
-            </div>
         </div>
     );
 }
