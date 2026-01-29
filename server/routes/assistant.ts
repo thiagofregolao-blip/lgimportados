@@ -439,8 +439,15 @@ assistantRoutes.post('/analyze-image', async (req: Request, res: Response) => {
                         content: [
                             {
                                 type: 'text',
-                                text: `Analise esta imagem de produto e retorne APENAS um JSON válido com:
-{"name": "...", "category": "...", "brand": "...", "description": "...", "suggestedPriceUSD": {"min": 0, "max": 0}, "confidence": 0.0}`
+                                text: `Analise esta imagem de produto e retorne APENAS um JSON válido com os seguintes campos. Responda estritamente em Português do Brasil (pt-BR):
+{
+  "name": "Nome comercial completo do produto (ex: 'iPhone 15 Pro Max 256GB')",
+  "category": "Categoria sugerida (ex: 'celulares', 'perfumes', 'games')",
+  "brand": "Marca identificada",
+  "description": "Uma descrição comercial completa, atraente e persuasiva com 3 a 5 parágrafos, focada em vendas. Inclua especificações técnicas se visíveis.",
+  "suggestedPriceUSD": {"min": 0, "max": 0},
+  "confidence": 0.0
+}`
                             },
                             {
                                 type: 'image_url',
@@ -473,12 +480,12 @@ assistantRoutes.post('/analyze-image', async (req: Request, res: Response) => {
             const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
             const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-            const prompt = `Analise esta imagem de produto e retorne APENAS um JSON válido (sem markdown) com:
+            const prompt = `Analise esta imagem de produto e retorne APENAS um JSON válido (sem markdown) com os dados abaixo. IMPORTANTE: Responda em Português do Brasil (pt-BR).
 {
-  "name": "Nome completo do produto (ex: 'iPhone 15 Pro Max 256GB')",
-  "category": "Categoria (ex: 'celulares', 'perfumes', 'games')",
-  "brand": "Marca se identificável",
-  "description": "Descrição atrativa em português para vendas (2-3 frases)",
+  "name": "Nome comercial completo do produto (ex: 'iPhone 15 Pro Max 256GB')",
+  "category": "Categoria sugerida (ex: 'celulares', 'perfumes', 'games')",
+  "brand": "Marca identificada",
+  "description": "Uma descrição comercial completa, atraente e persuasiva com 3 a 5 parágrafos, focada em vendas. Inclua especificações técnicas chaves se identificar.",
   "suggestedPriceUSD": { "min": 0, "max": 0 },
   "confidence": 0.0
 }`;
