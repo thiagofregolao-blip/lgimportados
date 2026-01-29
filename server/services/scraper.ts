@@ -1,7 +1,7 @@
 import fetch from 'node-fetch';
 import OpenAI from 'openai';
-import { db } from '../db';
-import { priceMonitors, products } from '../schema';
+import { db } from '../db.js';
+import { priceMonitors, products } from '../schema.js';
 import { eq } from 'drizzle-orm';
 
 // Configuração

@@ -1,8 +1,8 @@
 import { Router, Request, Response } from 'express';
-import { db } from '../db';
-import { priceMonitors, products, monitorSettings } from '../schema';
+import { db } from '../db.js';
+import { priceMonitors, products, monitorSettings } from '../schema.js';
 import { eq, desc } from 'drizzle-orm';
-import { runMonitorCheck } from '../services/scraper';
+import { runMonitorCheck } from '../services/scraper.js';
 
 export const monitorRoutes = Router();
 

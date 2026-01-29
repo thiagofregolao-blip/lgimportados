@@ -1,6 +1,6 @@
-import { db } from './db';
-import { monitorSettings, priceMonitors } from './schema';
-import { runMonitorCheck } from './services/scraper';
+import { db } from './db.js';
+import { monitorSettings, priceMonitors } from './schema.js';
+import { runMonitorCheck } from './services/scraper.js';
 import { eq, and, lte, or, isNull } from 'drizzle-orm';
 
 let isRunning = false;
