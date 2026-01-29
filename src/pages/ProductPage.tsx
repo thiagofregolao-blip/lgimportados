@@ -24,6 +24,11 @@ export function ProductPage() {
     const [comparisonData, setComparisonData] = useState<ComparisonData | null>(null);
     const [addedToCart, setAddedToCart] = useState(false);
 
+    // Scroll para o topo quando a página carrega
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [id]);
+
     useEffect(() => {
         if (id) {
             const found = products.find(p => String(p.id) === id);
